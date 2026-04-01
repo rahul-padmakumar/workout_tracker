@@ -7,24 +7,26 @@ from django.core.management import call_command
 from django.db.utils import OperationalError as DjangoOperationalError
 from django.test import SimpleTestCase
 
+
 class CommandTests(SimpleTestCase):
     """Tests for the wait_for_db management command."""
 
-    @patch('core.management.commands.wait_for_db_command.Command.check')
+    @patch('core.management.commands.wait_for_db.Command.check')
     def test_wait_for_db_ready(self, patched_check):
         """Test waiting for database when database is ready."""
         patched_check.return_value = True
 
-        call_command('wait_for_db_command')
+        call_command('wait_for_db')
 
         patched_check.assert_called_once_with(databases=['default'])
 
-    @patch('core.management.commands.wait_for_db_command.Command.check')
-    def test_wait_for_db_delayed(self, patched_check):
+    @patch('core.management.commands.wait_for_db.Command.check')
+    @patch('time.sleep')
+    def test_wait_for_db_delayed(self, patched_sleep, patched_check):
         """Test waiting for database when getting OperationalError."""
-        patched_check.side_effect = [Psycopg2OperationalError] * 2 + [DjangoOperationalError] * 3 + [True]
-        
-        call_command('wait_for_db_command')
+        patched_check.side_effect = [Psycopg2OperationalError] * 2 \
+            + [DjangoOperationalError] * 3 + [True]
+        call_command('wait_for_db')
 
         self.assertEqual(patched_check.call_count, 6)
         patched_check.assert_called_with(databases=['default'])
