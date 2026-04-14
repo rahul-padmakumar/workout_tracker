@@ -24,8 +24,8 @@ class UserSerializer(serializers.ModelSerializer):
         pattern = r'(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9])'
         if not re.match(pattern, value):
             raise serializers.ValidationError(
-                'Password must contain at least \
-                  one letter, one number, and one special character'
+                'Password must contain at least one letter, \
+one number, and one special character'
             )
         return value
 
@@ -35,7 +35,7 @@ class UserSerializer(serializers.ModelSerializer):
         if not re.match(pattern, value):
             raise serializers.ValidationError(
                 'Phone number must be entered in the format: \
-                  +999999999. Up to 15 digits allowed.'
++999999999. Up to 15 digits allowed.'
             )
         return value
 
