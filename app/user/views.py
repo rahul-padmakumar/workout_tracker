@@ -37,13 +37,9 @@ class CreateUserView(generics.CreateAPIView):
                     ui_code = 'password_not_strong_enough'
             elif error_key == 'phone_number':
                 ui_code = 'invalid_phone_number'
-            else:
-                ui_code = 'invalid_input'
 
-            return Response(
-                {
-                    'ui_msg_code': ui_code,
-                    'message': errors[error_key]
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            response_body = {'message': errors[error_key]}
+            if ui_code is not None:
+                response_body['ui_msg_code'] = ui_code
+
+            return Response(response_body, status=status.HTTP_400_BAD_REQUEST)
