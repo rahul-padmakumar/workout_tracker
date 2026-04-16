@@ -5,7 +5,13 @@ User views for the user API.
 
 from rest_framework import generics, status
 from rest_framework.response import Response
-from .serializers import UserSerializer
+from rest_framework.authtoken.views import ObtainAuthToken as Obtain
+from rest_framework.permissions import AllowAny
+from rest_framework.authtoken.models import Token
+from .serializers import (
+  UserSerializer,
+  TokenSerializer
+)
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -43,3 +49,35 @@ class CreateUserView(generics.CreateAPIView):
                 response_body['ui_msg_code'] = ui_code
 
             return Response(response_body, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CreateTokenView(Obtain):
+    """Create a new auth token for user"""
+    serializer_class = TokenSerializer
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        """Override post method to return custom response format"""
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+            token, created = Token.objects.get_or_create(user=user)
+            return Response({'token': token.key})
+        else:
+            error_key = list(serializer.errors.keys())[0]
+            if error_key == 'non_field_errors':
+                code = serializer.errors[error_key][0].code
+                if code == 'invalid_credentials':
+                    return Response(
+                        {'message':
+                         'Unable to authenticate with provided credentials.',
+                         'ui_msg_code': code},
+                        status=status.HTTP_401_UNAUTHORIZED
+                    )
+            else:
+                return Response(
+                    {'message':
+                     'Unable to authenticate with provided credentials.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )

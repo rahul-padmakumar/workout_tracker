@@ -2,7 +2,7 @@
 User serializers for the user API.
 """
 
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
 from rest_framework import serializers
 import re
 
@@ -42,3 +42,37 @@ one number, and one special character'
     def create(self, validated_data):
         """Create a new user with encrypted password and return it"""
         return get_user_model().objects.create_user(**validated_data)
+
+
+# pylint disable=abstract-method
+class TokenSerializer(serializers.Serializer):
+    """Serializer for the user authentication object"""
+    email = serializers.EmailField()
+    password = serializers.CharField(
+        style={'input_type': 'password'},
+        trim_whitespace=False,
+    )
+
+    def validate(self, attrs):
+        """ Validate and authenticate the user"""
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+        if email and password:
+            user = authenticate(
+                request=self.context.get('request'),
+                username=email,
+                password=password
+            )
+            if not user:
+                raise serializers.ValidationError(
+                    "Unable to authenticate with provided credentials.",
+                    code='invalid_credentials'
+                )
+            attrs['user'] = user
+            return attrs
+        else:
+            raise serializers.ValidationError(
+                'Must include "email" and "password".',
+                code='authentication_failed'
+            )

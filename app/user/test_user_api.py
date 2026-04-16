@@ -135,9 +135,10 @@ class PublicUserApiTests(TestCase):
         create_user(**payload)
         payload = {
             'email': 'test@example.com',
-            'password': 'wrongpassword'
+            'password': 'wrongpass@123'
         }
         res = self.client.post(TOKEN_URL, payload)
+        print(res)
         self.assertNotIn('token', res.data)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -154,8 +155,7 @@ class PublicUserApiTests(TestCase):
         payload = {
             'email': 'test@example.com',
             'password': '',
-            'phone_number': '1234567890'
         }
         res = self.client.post(TOKEN_URL, payload)
         self.assertNotIn('token', res.data)
-        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
