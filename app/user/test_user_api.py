@@ -10,6 +10,7 @@ from django.contrib.auth import get_user_model
 
 
 CREATE_USER_URL = reverse('user:create')
+TOKEN_URL = reverse('user:token')
 
 
 def create_user(**params):
@@ -104,3 +105,57 @@ class PublicUserApiTests(TestCase):
             email=payload['email']
         ).exists()
         self.assertFalse(user_exists)
+
+    def test_token_gen_for_valid_user(self):
+        """
+        Test that a token is generated for the valid user.
+        """
+        payload = {
+            'email': 'test@example.com',
+            'password': 'testpass@123',
+            'phone_number': '1234567890'
+        }
+        create_user(**payload)
+        res = self.client.post(TOKEN_URL, {
+            'email': payload['email'],
+            'password': payload['password']
+        })
+        self.assertIn('token', res.data)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_token_gen_invalid_credentials(self):
+        """
+        Test that token is not generated if invalid credentials are given.
+        """
+        payload = {
+            'email': 'test@example.com',
+            'password': 'testpass@123',
+            'phone_number': '1234567890'
+        }
+        create_user(**payload)
+        payload = {
+            'email': 'test@example.com',
+            'password': 'wrongpassword'
+        }
+        res = self.client.post(TOKEN_URL, payload)
+        self.assertNotIn('token', res.data)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_token_gen_empty_password(self):
+        """
+        Test that token is not generated if password is empty.
+        """
+        payload = {
+            'email': 'test@example.com',
+            'password': 'testpass@123',
+            'phone_number': '1234567890'
+        }
+        create_user(**payload)
+        payload = {
+            'email': 'test@example.com',
+            'password': '',
+            'phone_number': '1234567890'
+        }
+        res = self.client.post(TOKEN_URL, payload)
+        self.assertNotIn('token', res.data)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
