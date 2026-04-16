@@ -5,6 +5,7 @@ User serializers for the user API.
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework import serializers
 import re
+from django.db.models import Q
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -59,6 +60,17 @@ class TokenSerializer(serializers.Serializer):
         password = attrs.get('password')
 
         if email and password:
+
+            attempted_user = get_user_model().objects.filter(
+                Q(email=email.lower())
+            ).first()
+
+            if not attempted_user:
+                raise serializers.ValidationError(
+                    {"message": "auth_error"},
+                    code='invalid_credentials'
+                )
+
             user = authenticate(
                 request=self.context.get('request'),
                 username=email,
@@ -66,13 +78,13 @@ class TokenSerializer(serializers.Serializer):
             )
             if not user:
                 raise serializers.ValidationError(
-                    "Unable to authenticate with provided credentials.",
+                    {"message": "invalid_credentials"},
                     code='invalid_credentials'
                 )
             attrs['user'] = user
             return attrs
         else:
             raise serializers.ValidationError(
-                'Must include "email" and "password".',
+                {"message": "auth_failure"},
                 code='authentication_failed'
             )

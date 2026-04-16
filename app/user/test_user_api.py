@@ -142,6 +142,25 @@ class PublicUserApiTests(TestCase):
         self.assertNotIn('token', res.data)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_token_gen_auth_error(self):
+        """
+        Test that token is not generated if invalid credentials are given.
+        """
+        payload = {
+            'email': 'test@example.com',
+            'password': 'testpass@123',
+            'phone_number': '1234567890'
+        }
+        create_user(**payload)
+        payload = {
+            'email': 'test1@example.com',
+            'password': 'wrongpass@123'
+        }
+        res = self.client.post(TOKEN_URL, payload)
+        print(res)
+        self.assertNotIn('token', res.data)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_token_gen_empty_password(self):
         """
         Test that token is not generated if password is empty.
@@ -152,6 +171,7 @@ class PublicUserApiTests(TestCase):
             'phone_number': '1234567890'
         }
         create_user(**payload)
+        print("Testing token generation with empty password")
         payload = {
             'email': 'test@example.com',
             'password': '',
