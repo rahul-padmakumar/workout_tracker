@@ -120,7 +120,7 @@ class PublicUserApiTests(TestCase):
             'email': payload['email'],
             'password': payload['password']
         })
-        self.assertIn('token', res.data)
+        self.assertIn('token', res.data.get('data', None))
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_token_gen_invalid_credentials(self):
@@ -158,7 +158,8 @@ class PublicUserApiTests(TestCase):
         }
         res = self.client.post(TOKEN_URL, payload)
         print(res)
-        self.assertNotIn('token', res.data)
+        self.assertIsNone(res.data.get('data', None))
+        self.assertIsNotNone(res.data.get('errors', None))
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_token_gen_empty_password(self):
@@ -177,5 +178,6 @@ class PublicUserApiTests(TestCase):
             'password': '',
         }
         res = self.client.post(TOKEN_URL, payload)
-        self.assertNotIn('token', res.data)
+        self.assertIsNone(res.data.get('data', None))
+        self.assertIsNotNone(res.data.get('errors', None))
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)

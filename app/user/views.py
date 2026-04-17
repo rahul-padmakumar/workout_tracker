@@ -12,6 +12,8 @@ from .serializers import (
   UserSerializer,
   TokenSerializer
 )
+from core.utils.base_response import SuccessResponse, ErrorResponse
+import core.utils.util as util
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -57,50 +59,26 @@ class CreateTokenView(Obtain):
     authentication_classes = []
     permission_classes = [AllowAny]
 
-    @staticmethod
-    def get_custom_error(errors):
-        print(f"Serializer errors: {errors}")
-        custom_error = errors.get('non_field_errors', None)
-        if custom_error and len(custom_error) > 0:
-            return custom_error[0]
-        custom_error = errors.get('message', None)
-        if custom_error and len(custom_error) > 0:
-            return custom_error[0]
-        custom_error = errors.get('email', None)
-        if custom_error and len(custom_error) > 0:
-            return 'email_empty'
-        custom_error = errors.get('password', None)
-        if custom_error and len(custom_error) > 0:
-            return 'password_empty'
-        return None
-
     def post(self, request, *args, **kwargs):
         """Override post method to return custom response format"""
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
             token, created = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key})
+            return SuccessResponse(
+                data={'token': token.key},
+                message='Authentication successful.'
+            )
         else:
-            error = CreateTokenView.get_custom_error(serializer.errors)
+            error = util.get_custom_error(serializer.errors)
+            error_response = util.flatten_errors(serializer.errors)
             if error == 'invalid_credentials':
-                return Response(
-                    {'message': 'Invalid email or password.'},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
-            elif error == 'email_empty':
-                return Response(
-                    {'message': 'Email field is required.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            elif error == 'password_empty':
-                return Response(
-                    {'message': 'Password field is required.'},
-                    status=status.HTTP_400_BAD_REQUEST
+                return ErrorResponse(
+                    errors=error_response,
+                    status_code=status.HTTP_401_UNAUTHORIZED
                 )
             else:
-                return Response(
-                    {'message': 'Unable to authenticate with \
-provided credentials.'},
-                    status=status.HTTP_400_BAD_REQUEST
+                return ErrorResponse(
+                    errors=serializer.errors,
+                    status_code=status.HTTP_400_BAD_REQUEST
                 )

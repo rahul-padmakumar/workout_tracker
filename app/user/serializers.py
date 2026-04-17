@@ -6,6 +6,8 @@ from django.contrib.auth import get_user_model, authenticate
 from rest_framework import serializers
 import re
 from django.db.models import Q
+import core.utils.util as util
+import core.utils.error_codes as error_codes
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -67,8 +69,11 @@ class TokenSerializer(serializers.Serializer):
 
             if not attempted_user:
                 raise serializers.ValidationError(
-                    {"message": "auth_error"},
-                    code='invalid_credentials'
+                    util.ui_error(
+                        "User not found",
+                        error_codes.ErrorCodes.USER_NOT_FOUND
+                    ),
+                    code=error_codes.ErrorCodes.USER_NOT_FOUND
                 )
 
             user = authenticate(
@@ -76,15 +81,14 @@ class TokenSerializer(serializers.Serializer):
                 username=email,
                 password=password
             )
+
             if not user:
                 raise serializers.ValidationError(
-                    {"message": "invalid_credentials"},
-                    code='invalid_credentials'
+                    util.ui_error(
+                        "Invalid credentials",
+                        error_codes.ErrorCodes.INVALID_CREDENTIALS
+                    ),
+                    code=error_codes.ErrorCodes.INVALID_CREDENTIALS
                 )
             attrs['user'] = user
             return attrs
-        else:
-            raise serializers.ValidationError(
-                {"message": "auth_failure"},
-                code='authentication_failed'
-            )
