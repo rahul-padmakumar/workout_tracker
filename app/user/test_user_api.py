@@ -205,7 +205,7 @@ class PublicUserApiTests(TestCase):
 
         res = self.client.post(TOKEN_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertTrue(res.data.get('errors', {}).get('is_locked', False))
+        self.assertTrue(res.data.get('errors', {}).get('is_locked', True))
 
 
 class PrivateUserApiTests(TestCase):

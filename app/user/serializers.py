@@ -5,10 +5,11 @@ User serializers for the user API.
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework import serializers
 import re
-from django.db.models import Q
+from django.db.models import Q, F
 import core.utils.util as util
 import core.utils.error_codes as error_codes
 from django.apps import apps
+from django.db import transaction
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -95,32 +96,35 @@ class TokenSerializer(serializers.Serializer):
 
             if not user:
                 login_attempt_model = apps.get_model('core', 'LoginAttempt')
-                manager = login_attempt_model.objects
-                login_attempt, created = manager.get_or_create(
-                    email=email.lower()
-                )
 
-                if login_attempt.attempt_count >= 2:
-                    error_response = util.ui_error(
-                            "Account locked due to \
-multiple failed login attempts. Please try again later.",
-                            error_codes.ErrorCodes.ACCOUNT_LOCKED
-                        )
-                    error_response["is_locked"] = True
-                    raise serializers.ValidationError(
-                        error_response,
-                        code=error_codes.ErrorCodes.ACCOUNT_LOCKED
+                with transaction.atomic():
+                    manager = login_attempt_model.objects
+                    login_attempt, created = manager.get_or_create(
+                        email=email.lower()
                     )
 
-                login_attempt.attempt_count += 1
-                login_attempt.save()
+                    if login_attempt.attempt_count >= 2:
+                        error_response = util.ui_error(
+                                "Account locked due to \
+    multiple failed login attempts. Please try again later.",
+                                error_codes.ErrorCodes.ACCOUNT_LOCKED
+                            )
+                        error_response["is_locked"] = True
+                        raise serializers.ValidationError(
+                            error_response,
+                            code=error_codes.ErrorCodes.ACCOUNT_LOCKED
+                        )
 
-                raise serializers.ValidationError(
-                    util.ui_error(
-                        "Invalid credentials",
-                        error_codes.ErrorCodes.INVALID_CREDENTIALS
-                    ),
-                    code=error_codes.ErrorCodes.INVALID_CREDENTIALS
-                )
+                    manager.filter(email=email.lower()).update(
+                        attempt_count=F('attempt_count') + 1
+                    )
+
+                    raise serializers.ValidationError(
+                        util.ui_error(
+                            "Invalid credentials",
+                            error_codes.ErrorCodes.INVALID_CREDENTIALS
+                        ),
+                        code=error_codes.ErrorCodes.INVALID_CREDENTIALS
+                    )
             attrs['user'] = user
             return attrs
