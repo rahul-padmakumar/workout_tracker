@@ -8,6 +8,7 @@ import re
 from django.db.models import Q
 import core.utils.util as util
 import core.utils.error_codes as error_codes
+from django.apps import apps
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -73,7 +74,6 @@ class TokenSerializer(serializers.Serializer):
         password = attrs.get('password')
 
         if email and password:
-
             attempted_user = get_user_model().objects.filter(
                 Q(email=email.lower())
             ).first()
@@ -94,6 +94,27 @@ class TokenSerializer(serializers.Serializer):
             )
 
             if not user:
+                login_attempt_model = apps.get_model('core', 'LoginAttempt')
+                manager = login_attempt_model.objects
+                login_attempt, created = manager.get_or_create(
+                    email=email.lower()
+                )
+
+                if login_attempt.attempt_count >= 2:
+                    error_response = util.ui_error(
+                            "Account locked due to \
+multiple failed login attempts. Please try again later.",
+                            error_codes.ErrorCodes.ACCOUNT_LOCKED
+                        )
+                    error_response["is_locked"] = True
+                    raise serializers.ValidationError(
+                        error_response,
+                        code=error_codes.ErrorCodes.ACCOUNT_LOCKED
+                    )
+
+                login_attempt.attempt_count += 1
+                login_attempt.save()
+
                 raise serializers.ValidationError(
                     util.ui_error(
                         "Invalid credentials",

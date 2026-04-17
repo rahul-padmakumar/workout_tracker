@@ -183,6 +183,30 @@ class PublicUserApiTests(TestCase):
         self.assertIsNotNone(res.data.get('errors', None))
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_token_lockout_after_failed_attempts(self):
+        """
+        Test that the account is locked after 3 failed login attempts.
+        """
+        payload = {
+            'email': 'test@example.com',
+            'password': 'testpass@123',
+            'phone_number': '1234567890'
+        }
+        create_user(**payload)
+        payload = {
+            'email': 'test@example.com',
+            'password': 'wrongpass@123'
+        }
+        res = self.client.post(TOKEN_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        res = self.client.post(TOKEN_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        res = self.client.post(TOKEN_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertTrue(res.data.get('errors', {}).get('is_locked', False))
+
 
 class PrivateUserApiTests(TestCase):
     """

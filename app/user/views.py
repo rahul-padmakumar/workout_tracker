@@ -14,6 +14,7 @@ from .serializers import (
 )
 from core.utils.base_response import SuccessResponse, ErrorResponse
 import core.utils.util as util
+import core.utils.error_codes as error_codes
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -71,7 +72,11 @@ class CreateTokenView(Obtain):
         else:
             error = util.get_custom_error(serializer.errors)
             error_response = util.flatten_errors(serializer.errors)
-            if error == 'invalid_credentials':
+            print(f"Custom error code: {error}")
+            if error in [
+                error_codes.ErrorCodes.INVALID_CREDENTIALS,
+                error_codes.ErrorCodes.ACCOUNT_LOCKED
+            ]:
                 return ErrorResponse(
                     errors=error_response,
                     status_code=status.HTTP_401_UNAUTHORIZED
