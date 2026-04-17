@@ -11,6 +11,7 @@ from django.contrib.auth import get_user_model
 
 CREATE_USER_URL = reverse('user:create')
 TOKEN_URL = reverse('user:token')
+ME_URL = reverse('user:me')
 
 
 def create_user(**params):
@@ -181,3 +182,56 @@ class PublicUserApiTests(TestCase):
         self.assertIsNone(res.data.get('data', None))
         self.assertIsNotNone(res.data.get('errors', None))
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class PrivateUserApiTests(TestCase):
+    """
+    Test API requests that require authentication.
+    """
+
+    def setUp(self):
+        self.user = create_user(
+            email='test@example.com',
+            password='testpass@123',
+            phone_number='1234567890'
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def test_retrieve_user_unauthorized(self):
+        """
+        Test that user details cannot be retrieved without authentication.
+        """
+        self.client.force_authenticate(user=None)
+        res = self.client.get(ME_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_retrieve_user_details(self):
+        """
+        Test retrieving profile for logged in user.
+        """
+        res = self.client.get(ME_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['email'], self.user.email)
+        self.assertEqual(res.data['phone_number'], self.user.phone_number)
+
+    def test_post_me_not_allowed(self):
+        """
+        Test that POST is not allowed on the me URL.
+        """
+        res = self.client.post(ME_URL, {})
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_update_user_profile(self):
+        """
+        Test updating the user profile for authenticated user.
+        """
+        payload = {
+            'email': 'new_email@example.com',
+            'phone_number': '0987654321'
+        }
+        res = self.client.patch(ME_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, payload['email'])
+        self.assertEqual(self.user.phone_number, payload['phone_number'])

@@ -1,4 +1,3 @@
-from email import message
 from rest_framework.response import Response as Res
 from rest_framework import status
 
@@ -29,7 +28,7 @@ class BaseResponse(Res):
 
 
 class SuccessResponse(BaseResponse):
-    def __init__(self, message: str = None, data: dict = None, **kwargs):
+    def __init__(self, data: dict = None, **kwargs):
         super().__init__(
             success=True,
             data=data,
