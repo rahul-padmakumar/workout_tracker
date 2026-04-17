@@ -3,7 +3,7 @@ User views for the user API.
 """
 # Create your views here.
 
-from rest_framework import generics, status
+from rest_framework import generics, status, authentication, permissions
 from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken as Obtain
 from rest_framework.permissions import AllowAny
@@ -67,7 +67,6 @@ class CreateTokenView(Obtain):
             token, created = Token.objects.get_or_create(user=user)
             return SuccessResponse(
                 data={'token': token.key},
-                message='Authentication successful.'
             )
         else:
             error = util.get_custom_error(serializer.errors)
@@ -82,3 +81,14 @@ class CreateTokenView(Obtain):
                     errors=serializer.errors,
                     status_code=status.HTTP_400_BAD_REQUEST
                 )
+
+
+class ManageUserView(generics.RetrieveUpdateAPIView):
+    """Manage the authenticated user"""
+    serializer_class = UserSerializer
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        """Retrieve and return authenticated user"""
+        return self.request.user
