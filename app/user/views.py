@@ -80,6 +80,7 @@ class CreateUserView(generics.CreateAPIView):
                 ),
                 status_code=status.HTTP_400_BAD_REQUEST
             )
+        # pylint: disable=broad-exception-caught
         except Exception as e:
             print(f"Unexpected error during user creation: {type(e)}")
             return ErrorResponse(
@@ -141,6 +142,7 @@ class CreateTokenView(Obtain):
                 ),
                 status_code=status.HTTP_400_BAD_REQUEST
             )
+        # pylint: disable=broad-exception-caught
         except Exception as e:
             print(f"Unexpected error during login: {type(e)}")
             return ErrorResponse(

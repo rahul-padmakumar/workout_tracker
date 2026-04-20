@@ -31,7 +31,7 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
-# pylint disable=abstract-method
+# pylint: disable=abstract-method
 class TokenSerializer(serializers.Serializer):
     """Serializer for the user authentication object"""
     email = serializers.EmailField()
