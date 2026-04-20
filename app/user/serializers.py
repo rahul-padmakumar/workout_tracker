@@ -2,15 +2,16 @@
 User serializers for the user API.
 """
 
+import re
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-import re
 
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for the user object"""
 
     class Meta:
+        """Meta class for the serializer"""
         model = get_user_model()
         fields = ('email', 'password', 'phone_number')
         extra_kwargs = {'password': {'write_only': True, 'min_length': 8}}
