@@ -36,7 +36,7 @@ class LoginService:
 
                 with transaction.atomic():
                     manager = login_attempt_model.objects
-                    login_attempt, created = manager.get_or_create(
+                    login_attempt, _ = manager.get_or_create(
                         email=email.lower()
                     )
 
