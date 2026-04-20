@@ -121,6 +121,7 @@ class PublicUserApiTests(TestCase):
             'email': payload['email'],
             'password': payload['password']
         })
+        print(res.data)
         self.assertIn('token', res.data.get('data', None))
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
@@ -173,7 +174,6 @@ class PublicUserApiTests(TestCase):
             'phone_number': '1234567890'
         }
         create_user(**payload)
-        print("Testing token generation with empty password")
         payload = {
             'email': 'test@example.com',
             'password': '',

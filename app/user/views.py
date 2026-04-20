@@ -3,18 +3,25 @@ User views for the user API.
 """
 # Create your views here.
 
+from core.utils.base_response import SuccessResponse, ErrorResponse
+import core.utils.util as util
+import core.utils.error_codes as error_codes
+from user.exceptions.user_exceptions import (
+  InvalidCredentialsException, UserLockoutException, UserNotRegisteredException
+)
+
 from rest_framework import generics, status, authentication, permissions
 from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken as Obtain
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import ValidationError
+from user.services.login_service import LoginService
+
 from .serializers import (
   UserSerializer,
   TokenSerializer
 )
-from core.utils.base_response import SuccessResponse, ErrorResponse
-import core.utils.util as util
-import core.utils.error_codes as error_codes
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -63,29 +70,56 @@ class CreateTokenView(Obtain):
     def post(self, request, *args, **kwargs):
         """Override post method to return custom response format"""
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            token, created = Token.objects.get_or_create(user=user)
-            return SuccessResponse(
-                data={'token': token.key},
+        try:
+            serializer.is_valid(raise_exception=True)
+            login_service = LoginService()
+            user = login_service.login_user(
+                email=serializer.validated_data['email'],
+                password=serializer.validated_data['password'],
+                request=request
             )
-        else:
-            error = util.get_custom_error(serializer.errors)
-            error_response = util.flatten_errors(serializer.errors)
-            print(f"Custom error code: {error}")
-            if error in [
-                error_codes.ErrorCodes.INVALID_CREDENTIALS,
-                error_codes.ErrorCodes.ACCOUNT_LOCKED
-            ]:
-                return ErrorResponse(
-                    errors=error_response,
-                    status_code=status.HTTP_401_UNAUTHORIZED
-                )
-            else:
-                return ErrorResponse(
-                    errors=serializer.errors,
-                    status_code=status.HTTP_400_BAD_REQUEST
-                )
+            token, created = Token.objects.get_or_create(
+                user=user
+            )
+            return SuccessResponse(
+                data={'token': token.key}
+            )
+        except UserNotRegisteredException:
+            return ErrorResponse(
+                errors=util.ui_error(
+                    error_codes.ErrorCodes.USER_NOT_FOUND
+                ),
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        except InvalidCredentialsException:
+            return ErrorResponse(
+                errors=util.ui_error(
+                    error_codes.ErrorCodes.INVALID_CREDENTIALS
+                ),
+                status_code=status.HTTP_401_UNAUTHORIZED
+            )
+        except UserLockoutException:
+            return ErrorResponse(
+                errors=util.ui_error(
+                    error_codes.ErrorCodes.ACCOUNT_LOCKED
+                ),
+                status_code=status.HTTP_401_UNAUTHORIZED
+            )
+        except ValidationError:
+            return ErrorResponse(
+                errors=util.ui_error(
+                    error_codes.ErrorCodes.VALIDATION_ERROR
+                ),
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            print(f"Unexpected error during login: {type(e)}")
+            return ErrorResponse(
+                errors=util.ui_error(
+                    error_codes.ErrorCodes.SERVER_ERROR
+                ),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class ManageUserView(generics.RetrieveUpdateAPIView):
