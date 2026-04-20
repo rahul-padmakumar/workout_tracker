@@ -11,12 +11,18 @@ from user.exceptions.user_exceptions import (
 )
 
 from rest_framework import generics, status, authentication, permissions
-from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken as Obtain
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
 from user.services.login_service import LoginService
+from user.exceptions.user_exceptions import (
+    PasswordNotStrongEnoughException,
+    PasswordTooShortException,
+    InvalidPhoneNumberException,
+)
+import user.services.validate_password_service as validate_password_service
+import user.services.validate_phone_service as validate_phone_service
 
 from .serializers import (
   UserSerializer,
@@ -31,34 +37,57 @@ class CreateUserView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         """Override create method to return custom response format"""
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            response_data = {
-                'email': user.email,
-                'phone_number': user.phone_number
-            }
-            return Response(response_data, status=status.HTTP_201_CREATED)
-        else:
-            errors = serializer.errors
-            # pick the first field with an error
-            error_key = next(iter(errors))
-
-            # determine ui message code based on field and validation error
-            ui_code = None
-            if error_key == 'password':
-                err = errors[error_key][0]
-                if getattr(err, 'code', None) == 'min_length':
-                    ui_code = 'password_too_short'
-                else:
-                    ui_code = 'password_not_strong_enough'
-            elif error_key == 'phone_number':
-                ui_code = 'invalid_phone_number'
-
-            response_body = {'message': errors[error_key]}
-            if ui_code is not None:
-                response_body['ui_msg_code'] = ui_code
-
-            return Response(response_body, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            serializer.is_valid(raise_exception=True)
+            if validate_password_service.validate_password(
+                serializer.validated_data['password']
+            ) and validate_phone_service.validate_phone_number(
+                serializer.validated_data['phone_number']
+            ):
+                user = serializer.save()
+                response_data = {
+                    'email': user.email,
+                    'phone_number': user.phone_number
+                }
+                return SuccessResponse(
+                    data=response_data
+                )
+        except PasswordNotStrongEnoughException:
+            return ErrorResponse(
+                errors=util.ui_error(
+                    error_codes.ErrorCodes.PASSWORD_NOT_STRONG_ENOUGH,
+                ),
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        except PasswordTooShortException:
+            return ErrorResponse(
+                errors=util.ui_error(
+                    error_codes.ErrorCodes.PASSWORD_TOO_SHORT,
+                ),
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        except InvalidPhoneNumberException:
+            return ErrorResponse(
+                errors=util.ui_error(
+                    error_codes.ErrorCodes.INVALID_PHONE_NUMBER
+                ),
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        except ValidationError:
+            return ErrorResponse(
+                errors=util.ui_error(
+                    error_codes.ErrorCodes.VALIDATION_ERROR
+                ),
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            print(f"Unexpected error during user creation: {type(e)}")
+            return ErrorResponse(
+                errors=util.ui_error(
+                    error_codes.ErrorCodes.SERVER_ERROR
+                ),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class CreateTokenView(Obtain):

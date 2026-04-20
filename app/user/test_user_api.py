@@ -39,7 +39,7 @@ class PublicUserApiTests(TestCase):
             'phone_number': '1234567890'
         }
         res = self.client.post(CREATE_USER_URL, payload)
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         user = get_user_model().objects.get(email=payload['email'])
         self.assertTrue(user.check_password(payload['password']))
         self.assertEqual(user.phone_number, payload['phone_number'])
