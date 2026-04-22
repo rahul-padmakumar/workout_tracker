@@ -108,7 +108,7 @@ class CreateTokenView(Obtain):
                 password=serializer.validated_data['password'],
                 request=request
             )
-            token, created = Token.objects.get_or_create(
+            token, _ = Token.objects.get_or_create(
                 user=user
             )
             return SuccessResponse(
@@ -121,11 +121,13 @@ class CreateTokenView(Obtain):
                 ),
                 status_code=status.HTTP_400_BAD_REQUEST
             )
-        except InvalidCredentialsException:
-            return ErrorResponse(
-                errors=util.ui_error(
+        except InvalidCredentialsException as e:
+            error_dict = util.ui_error(
                     error_codes.ErrorCodes.INVALID_CREDENTIALS
-                ),
+                )
+            error_dict['attempt_count'] = e.attempt_count
+            return ErrorResponse(
+                errors=error_dict,
                 status_code=status.HTTP_401_UNAUTHORIZED
             )
         except UserLockoutException:
@@ -144,7 +146,7 @@ class CreateTokenView(Obtain):
             )
         # pylint: disable=broad-exception-caught
         except Exception as e:
-            print(f"Unexpected error during login: {type(e)}")
+            print(f"Unexpected error during login: {type(e)}, {e}")
             return ErrorResponse(
                 errors=util.ui_error(
                     error_codes.ErrorCodes.SERVER_ERROR

@@ -1,6 +1,9 @@
 """
  Class for login use case
 """
+from datetime import timedelta
+from django.utils import timezone
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
 from django.db import transaction
@@ -33,6 +36,21 @@ class LoginService:
                 "User with this email does not exist"
             )
 
+        try:
+            account_lock_model = apps.get_model('core', 'AccountLock')
+            account_lock, _ = account_lock_model.objects.get_or_create(
+                email=email_lower_case
+            )
+        except LookupError:
+            account_lock_model = None
+
+        if account_lock.is_locked:
+            if timezone.now() > account_lock.lock_until:
+                account_lock.is_locked = False
+                account_lock.save()
+            else:
+                raise UserLockoutException()
+
         user = authenticate(
             request=request,
             username=email_lower_case,
@@ -53,7 +71,22 @@ class LoginService:
                         email=email_lower_case,
                         successful=False
                     )
-            raise InvalidCredentialsException("Invalid credentials")
+
+                account_lock.attempt_count += 1
+                if account_lock.attempt_count >= 3:
+                    account_lock.is_locked = True
+                    account_lock.locked_at = timezone.now()
+                    account_lock.locked_until = (
+                        timezone.now() + timedelta(hours=24)
+                    )
+                    raise UserLockoutException(
+                        "Account locked due to invalid"
+                    )
+
+                account_lock.save()
+                raise InvalidCredentialsException(
+                    count=account_lock.attempt_count
+                )
         else:
             if login_attempt_model:
                 login_attempt_model.objects.create(

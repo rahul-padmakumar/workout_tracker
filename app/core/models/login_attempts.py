@@ -2,7 +2,7 @@ from django.db import models
 
 
 class LoginAttempt(models.Model):
-    email = models.EmailField(max_length=255, unique=True)
+    email = models.EmailField(max_length=255)
     timestamp = models.DateTimeField(auto_now_add=True)
     successful = models.BooleanField(default=False)
 

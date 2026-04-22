@@ -1,22 +1,43 @@
+
+
 class UserNotRegisteredException(Exception):
-    pass
+    """
+    Exception for user not registered
+    """
 
 
 class InvalidCredentialsException(Exception):
-    pass
+
+    """
+    Raised when credentials are invalid.
+    """
+
+    attempt_count = 0
+
+    def __init__(self, count=0):
+        self.attempt_count = count
+        super().__init__(count)
 
 
 class UserLockoutException(Exception):
-    pass
+    """
+    Raised when user is locked
+    """
 
 
 class PasswordTooShortException(Exception):
-    pass
+    """
+    Raised when password is less than 8 characters
+    """
 
 
 class PasswordNotStrongEnoughException(Exception):
-    pass
+    """
+    Raised when password does not contain alphanumeric and special characters
+    """
 
 
 class InvalidPhoneNumberException(Exception):
-    pass
+    """
+    Raised when phone number is invalid
+    """

@@ -27,5 +27,5 @@ class AccountLock(models.Model):
         max_length=100,
         choices=LockoutReason.choices
     )
-    created_at = models.DateTimeField(auto_now=True, null=False)
+    created_at = models.DateTimeField(auto_now_add=True, null=False)
     updated_at = models.DateTimeField(auto_now=True, null=False)

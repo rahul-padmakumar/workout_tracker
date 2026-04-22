@@ -68,7 +68,6 @@ class PublicUserApiTests(TestCase):
             'phone_number': '1234567890'
         }
         res = self.client.post(CREATE_USER_URL, payload)
-        print(res.data)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         user_exists = get_user_model().objects.filter(
             email=payload['email']
@@ -121,7 +120,6 @@ class PublicUserApiTests(TestCase):
             'email': payload['email'],
             'password': payload['password']
         })
-        print(res.data)
         self.assertIn('token', res.data.get('data', None))
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
@@ -140,7 +138,6 @@ class PublicUserApiTests(TestCase):
             'password': 'wrongpass@123'
         }
         res = self.client.post(TOKEN_URL, payload)
-        print(res)
         self.assertNotIn('token', res.data)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -159,7 +156,6 @@ class PublicUserApiTests(TestCase):
             'password': 'wrongpass@123'
         }
         res = self.client.post(TOKEN_URL, payload)
-        print(res)
         self.assertIsNone(res.data.get('data', None))
         self.assertIsNotNone(res.data.get('errors', None))
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
@@ -199,9 +195,11 @@ class PublicUserApiTests(TestCase):
         }
         res = self.client.post(TOKEN_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertTrue(res.data.get('errors', {}).get('attempt_count'), 1)
 
         res = self.client.post(TOKEN_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertTrue(res.data.get('errors', {}).get('attempt_count'), 2)
 
         res = self.client.post(TOKEN_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
