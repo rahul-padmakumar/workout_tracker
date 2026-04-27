@@ -120,7 +120,8 @@ class PublicUserApiTests(TestCase):
             'email': payload['email'],
             'password': payload['password']
         })
-        self.assertIn('token', res.data.get('data', None))
+        self.assertIn('access_token', res.data.get('data', None))
+        self.assertIn('refresh_token', res.data.get('data', None))
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_token_gen_invalid_credentials(self):
@@ -138,7 +139,7 @@ class PublicUserApiTests(TestCase):
             'password': 'wrongpass@123'
         }
         res = self.client.post(TOKEN_URL, payload)
-        self.assertNotIn('token', res.data)
+        self.assertIsNone(res.data.get('data', None))
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_token_gen_auth_error(self):

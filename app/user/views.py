@@ -11,9 +11,7 @@ from user.exceptions.user_exceptions import (
 )
 
 from rest_framework import generics, status, authentication, permissions
-from rest_framework.authtoken.views import ObtainAuthToken as Obtain
 from rest_framework.permissions import AllowAny
-from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
 from user.services.login_service import LoginService
 from user.exceptions.user_exceptions import (
@@ -28,6 +26,11 @@ from .serializers import (
   UserSerializer,
   TokenSerializer
 )
+
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
+from drf_spectacular.utils import extend_schema
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -91,7 +94,7 @@ class CreateUserView(generics.CreateAPIView):
             )
 
 
-class CreateTokenView(Obtain):
+class CreateTokenView(TokenObtainPairView):
     """Create a new auth token for user"""
     serializer_class = TokenSerializer
     authentication_classes = []
@@ -108,11 +111,12 @@ class CreateTokenView(Obtain):
                 password=serializer.validated_data['password'],
                 request=request
             )
-            token, _ = Token.objects.get_or_create(
-                user=user
-            )
+            token_response = RefreshToken.for_user(user=user)
             return SuccessResponse(
-                data={'token': token.key}
+                data={
+                    'access_token': str(token_response.access_token),
+                    'refresh_token': str(token_response)
+                }
             )
         except UserNotRegisteredException:
             return ErrorResponse(
@@ -164,3 +168,13 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         """Retrieve and return authenticated user"""
         return self.request.user
+
+
+class RefreshTokenView(TokenRefreshView):
+    """View for token refresh"""
+    @extend_schema(
+        summary="Refresh JWT token",
+        description="Takes refresh token and returns new access token"
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
