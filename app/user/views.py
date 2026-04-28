@@ -30,7 +30,10 @@ from .serializers import (
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.exceptions import InvalidToken
 from drf_spectacular.utils import extend_schema
+
+from django.utils.translation import gettext as _
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -114,8 +117,8 @@ class CreateTokenView(TokenObtainPairView):
             token_response = RefreshToken.for_user(user=user)
             return SuccessResponse(
                 data={
-                    'access_token': str(token_response.access_token),
-                    'refresh_token': str(token_response)
+                    'access': str(token_response.access_token),
+                    'refresh': str(token_response)
                 }
             )
         except UserNotRegisteredException:
@@ -177,4 +180,23 @@ class RefreshTokenView(TokenRefreshView):
         description="Takes refresh token and returns new access token"
     )
     def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
+        try:
+            res = super().post(request, *args, **kwargs)
+            return SuccessResponse(
+                    data=res.data
+                )
+        except InvalidToken:
+            return ErrorResponse(
+                errors=util.ui_error(
+                    message=_('Token not accepted'),
+                    ui_msg_code=error_codes.ErrorCodes.INVALID_TOKEN
+                )
+            )
+        # pylint: disable=broad-exception-caught
+        except Exception as e:
+            return ErrorResponse(
+                errors=util.ui_error(
+                    message=e,
+                    ui_msg_code=error_codes.ErrorCodes.SERVER_ERROR
+                )
+            )

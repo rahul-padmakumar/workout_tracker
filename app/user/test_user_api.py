@@ -120,8 +120,8 @@ class PublicUserApiTests(TestCase):
             'email': payload['email'],
             'password': payload['password']
         })
-        self.assertIn('access_token', res.data.get('data', None))
-        self.assertIn('refresh_token', res.data.get('data', None))
+        self.assertIn('access', res.data.get('data', None))
+        self.assertIn('refresh', res.data.get('data', None))
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_token_gen_invalid_credentials(self):

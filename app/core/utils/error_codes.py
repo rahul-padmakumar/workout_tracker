@@ -7,3 +7,4 @@ class ErrorCodes:
     PASSWORD_NOT_STRONG_ENOUGH = 'password_not_strong_enough'
     PASSWORD_TOO_SHORT = 'password_too_short'
     INVALID_PHONE_NUMBER = 'invalid_phone_number'
+    INVALID_TOKEN = "invalid_token"
