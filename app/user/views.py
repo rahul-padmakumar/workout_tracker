@@ -10,7 +10,8 @@ from user.exceptions.user_exceptions import (
   InvalidCredentialsException, UserLockoutException, UserNotRegisteredException
 )
 
-from rest_framework import generics, status, authentication, permissions
+from rest_framework import generics, status, permissions
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import ValidationError
 from user.services.login_service import LoginService
@@ -165,7 +166,7 @@ class CreateTokenView(TokenObtainPairView):
 class ManageUserView(generics.RetrieveUpdateAPIView):
     """Manage the authenticated user"""
     serializer_class = UserSerializer
-    authentication_classes = [authentication.TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
