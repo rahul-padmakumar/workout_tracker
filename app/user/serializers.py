@@ -39,3 +39,10 @@ class TokenSerializer(serializers.Serializer):
         style={'input_type': 'password'},
         trim_whitespace=False,
     )
+
+
+class VerifyOTPSerializer(serializers.Serializer):
+    """Serializer for verifying user OTP"""
+    otp = serializers.CharField(
+        max_length=6
+    )

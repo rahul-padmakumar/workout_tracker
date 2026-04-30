@@ -8,3 +8,4 @@ class ErrorCodes:
     PASSWORD_TOO_SHORT = 'password_too_short'
     INVALID_PHONE_NUMBER = 'invalid_phone_number'
     INVALID_TOKEN = "invalid_token"
+    OTP_NOT_REQUESTED = "otp_not_requested"

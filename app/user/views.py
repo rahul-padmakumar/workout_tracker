@@ -7,7 +7,10 @@ from core.utils.base_response import SuccessResponse, ErrorResponse
 import core.utils.util as util
 import core.utils.error_codes as error_codes
 from user.exceptions.user_exceptions import (
-  InvalidCredentialsException, UserLockoutException, UserNotRegisteredException
+    InvalidCredentialsException,
+    UserLockoutException,
+    UserNotRegisteredException,
+    OTPNotRequestedException
 )
 
 from rest_framework import generics, status, permissions
@@ -22,10 +25,12 @@ from user.exceptions.user_exceptions import (
 )
 import user.services.validate_password_service as validate_password_service
 import user.services.validate_phone_service as validate_phone_service
+import user.services.otp_service as otp_service
 
 from .serializers import (
   UserSerializer,
-  TokenSerializer
+  TokenSerializer,
+  VerifyOTPSerializer
 )
 
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -35,6 +40,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken
 from drf_spectacular.utils import extend_schema
 
 from django.utils.translation import gettext as _
+from rest_framework.views import APIView
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -199,5 +205,44 @@ class RefreshTokenView(TokenRefreshView):
                 errors=util.ui_error(
                     message=e,
                     ui_msg_code=error_codes.ErrorCodes.SERVER_ERROR
+                )
+            )
+
+
+class OTPView(APIView):
+    """
+    View for otp fetch and verification
+    """
+    serializer_class = VerifyOTPSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        """ Generate and return otp"""
+        otp_value = otp_service.fetch_otp(request.user)
+        return SuccessResponse(
+            data={
+                "otp": str(otp_value)
+            }
+        )
+
+    def post(self, request):
+        """Verify generated OTP"""
+        otp_value = request.data.get("otp")
+
+        try:
+            if otp_service.verify_otp(request.user, otp_value):
+                return SuccessResponse()
+            else:
+                return ErrorResponse(
+                    errors={
+                        'message': 'Not valid otp'
+                    }
+                )
+        except OTPNotRequestedException:
+            return ErrorResponse(
+                errors=util.ui_error(
+                    message=_("OTP not requested"),
+                    ui_msg_code=error_codes.ErrorCodes.OTP_NOT_REQUESTED
                 )
             )

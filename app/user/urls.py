@@ -6,7 +6,8 @@ from .views import (
   CreateUserView,
   CreateTokenView,
   ManageUserView,
-  RefreshTokenView
+  RefreshTokenView,
+  OTPView
 )
 
 app_name = 'user'
@@ -15,5 +16,6 @@ urlpatterns = [
     path('create/', CreateUserView.as_view(), name='create'),
     path('login/', CreateTokenView.as_view(), name='token'),
     path('me/', ManageUserView.as_view(), name='me'),
-    path('refresh/', RefreshTokenView.as_view(), name='refresh')
+    path('refresh/', RefreshTokenView.as_view(), name='refresh'),
+    path('otp/', OTPView.as_view(), name="otp")
 ]

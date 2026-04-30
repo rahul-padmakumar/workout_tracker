@@ -41,3 +41,9 @@ class InvalidPhoneNumberException(Exception):
     """
     Raised when phone number is invalid
     """
+
+
+class OTPNotRequestedException(Exception):
+    """
+    Raised when verify is called without request
+    """
