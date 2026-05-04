@@ -47,3 +47,9 @@ class OTPNotRequestedException(Exception):
     """
     Raised when verify is called without request
     """
+
+
+class OTPReuseException(Exception):
+    """
+    Raised when reusing already used OTP
+    """

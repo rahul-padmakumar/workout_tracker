@@ -36,13 +36,41 @@ def verify_otp(user, otp) -> bool:
     """helper for verifying otp"""
     otp_model = apps.get_model('core', 'OTP')
     saved_otp_info, created = otp_model.objects.get_or_create(user=user)
+
     if created or not saved_otp_info.otp_code:
         raise user_exceptions.OTPNotRequestedException
+
+    account_lock = apps.get_model('core', 'AccountLock')
+    user_entry_in_lock, _ = account_lock.objects.get_or_create(
+        email=user.email
+    )
+
+    if user_entry_in_lock and user_entry_in_lock.is_locked:
+        raise user_exceptions.UserLockoutException
+
     secret = saved_otp_info.secret
     totp = pyotp.TOTP(secret, interval=180)
     if totp.verify(otp, valid_window=0):
+
+        if saved_otp_info.is_used:
+            raise user_exceptions.OTPReuseException
+
         saved_otp_info.is_used = True
         saved_otp_info.save()
-        return True
+        user_entry_in_lock.is_locked = False
+        user_entry_in_lock.attempt_count = 0
+        user_entry_in_lock.save()
+        return True, 0
     else:
-        return False
+        user_entry_in_lock.attempt_count += 1
+        if user_entry_in_lock.attempt_count >= 3:
+            user_entry_in_lock.is_locked = True
+            user_entry_in_lock.locked_at = timezone.now()
+            user_entry_in_lock.locked_until = (
+                timezone.now() + timedelta(hours=24)
+            )
+            raise user_exceptions.UserLockoutException(
+                "Account locked due to invalid"
+            )
+        user_entry_in_lock.save()
+        return False, user_entry_in_lock.attempt_count

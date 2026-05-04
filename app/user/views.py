@@ -10,7 +10,8 @@ from user.exceptions.user_exceptions import (
     InvalidCredentialsException,
     UserLockoutException,
     UserNotRegisteredException,
-    OTPNotRequestedException
+    OTPNotRequestedException,
+    OTPReuseException,
 )
 
 from rest_framework import generics, status, permissions
@@ -231,12 +232,16 @@ class OTPView(APIView):
         otp_value = request.data.get("otp")
 
         try:
-            if otp_service.verify_otp(request.user, otp_value):
+            is_verified, count = otp_service.verify_otp(
+                request.user, otp_value
+            )
+            if is_verified:
                 return SuccessResponse()
             else:
                 return ErrorResponse(
                     errors={
-                        'message': 'Not valid otp'
+                        'message': 'Not valid otp',
+                        'attempt_count': count
                     }
                 )
         except OTPNotRequestedException:
@@ -244,5 +249,19 @@ class OTPView(APIView):
                 errors=util.ui_error(
                     message=_("OTP not requested"),
                     ui_msg_code=error_codes.ErrorCodes.OTP_NOT_REQUESTED
+                )
+            )
+        except OTPReuseException:
+            return ErrorResponse(
+                errors=util.ui_error(
+                    message=_("OTP reused"),
+                    ui_msg_code=error_codes.ErrorCodes.OTP_REUSED
+                )
+            )
+        except UserLockoutException:
+            return ErrorResponse(
+                errors=util.ui_error(
+                    message=_("User lockout"),
+                    ui_msg_code=error_codes.ErrorCodes.ACCOUNT_LOCKED
                 )
             )

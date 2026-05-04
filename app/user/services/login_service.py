@@ -93,4 +93,7 @@ class LoginService:
                     email=email_lower_case,
                     successful=True
                 )
+            account_lock.is_locked = False
+            account_lock.attempt_count = 0
+            account_lock.save()
             return user
