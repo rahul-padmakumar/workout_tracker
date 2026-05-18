@@ -4,6 +4,7 @@ User serializers for the user API.
 
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from core.models.user_profile import UserProfile
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -46,3 +47,31 @@ class VerifyOTPSerializer(serializers.Serializer):
     otp = serializers.CharField(
         max_length=6
     )
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    """Serializer for the user profile object"""
+
+    class Meta:
+        """Meta class for the serializer"""
+        model = UserProfile
+        fields = (
+            'display_name',
+            'age',
+            'weight',
+            'height',
+            'gender',
+            'activity_level',
+            'fitness_goals',
+            'user_image',
+        )
+        extra_kwargs = {'user_image': {'required': False}}
+
+class UploadUserDpSerializer(serializers.ModelSerializer):
+    """Serializer for uploading user display picture"""
+    
+    class Meta:
+        """Meta class for the serializer"""
+        model = UserProfile
+        fields = ('id', 'user_image',)
+        extra_kwargs = {'user_image': {'required': True}}

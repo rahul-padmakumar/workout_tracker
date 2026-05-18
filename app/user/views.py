@@ -3,6 +3,7 @@ User views for the user API.
 """
 # Create your views here.
 
+from core.models.user_profile import UserProfile
 from core.utils.base_response import SuccessResponse, ErrorResponse
 import core.utils.util as util
 import core.utils.error_codes as error_codes
@@ -14,7 +15,7 @@ from user.exceptions.user_exceptions import (
     OTPReuseException,
 )
 
-from rest_framework import generics, status, permissions
+from rest_framework import generics, status, permissions, mixins
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import ValidationError
@@ -29,10 +30,14 @@ import user.services.validate_phone_service as validate_phone_service
 import user.services.otp_service as otp_service
 
 from .serializers import (
+  UploadUserDpSerializer,
+  UserProfileSerializer,
   UserSerializer,
   TokenSerializer,
   VerifyOTPSerializer
 )
+
+from core.models.user_profile import UserProfile
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -42,6 +47,7 @@ from drf_spectacular.utils import extend_schema
 
 from django.utils.translation import gettext as _
 from rest_framework.views import APIView
+from django.apps import apps
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -265,3 +271,50 @@ class OTPView(APIView):
                     ui_msg_code=error_codes.ErrorCodes.ACCOUNT_LOCKED
                 )
             )
+
+
+class UserProfileAPIView(
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    generics.GenericAPIView
+):
+    """
+    View for user profile management
+    """
+    serializer_class = UserProfileSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    queryset = apps.get_model('core', 'UserProfile').objects.all()
+
+    def get_object(self):
+        """Retrieve and return user profile"""
+        UserProfileModel = apps.get_model('core', 'UserProfile')
+        profile, _ = UserProfileModel.objects.get_or_create(user=self.request.user)
+        return profile
+        
+    def patch(self, request, *args, **kwargs):
+        """Update user profile"""
+        return self.update(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        """Retrieve user profile"""
+        return self.retrieve(request, *args, **kwargs)
+
+
+class UserProfileImageUploadView(mixins.UpdateModelMixin, generics.GenericAPIView):
+    """
+    View for uploading user profile image
+    """
+    serializer_class = UploadUserDpSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        """Retrieve and return user profile"""
+        return self.request.user.profile
+    
+    def patch(self, request, *args, **kwargs):
+        """Update user profile image"""
+        return self.partial_update(request, *args, **kwargs)
