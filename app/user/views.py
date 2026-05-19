@@ -49,6 +49,9 @@ from django.utils.translation import gettext as _
 from rest_framework.views import APIView
 from django.apps import apps
 
+from core.utils.tokens import PreAuthToken
+from core.utils.permissions import IsPreAuthToken, IsFullAuthToken
+
 
 class CreateUserView(generics.CreateAPIView):
     """Create a new user in the system"""
@@ -128,11 +131,12 @@ class CreateTokenView(TokenObtainPairView):
                 password=serializer.validated_data['password'],
                 request=request
             )
-            token_response = RefreshToken.for_user(user=user)
+            token = PreAuthToken()
+            token["user_id"] = str(user.id)
+
             return SuccessResponse(
                 data={
-                    'access': str(token_response.access_token),
-                    'refresh': str(token_response)
+                    'token': str(token)
                 }
             )
         except UserNotRegisteredException:
@@ -180,7 +184,7 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
     """Manage the authenticated user"""
     serializer_class = UserSerializer
     authentication_classes = [JWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsFullAuthToken]
 
     def get_object(self):
         """Retrieve and return authenticated user"""
@@ -222,7 +226,7 @@ class OTPView(APIView):
     """
     serializer_class = VerifyOTPSerializer
     authentication_classes = [JWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsPreAuthToken]
 
     def get(self, request):
         """ Generate and return otp"""
@@ -242,7 +246,22 @@ class OTPView(APIView):
                 request.user, otp_value
             )
             if is_verified:
-                return SuccessResponse()
+                token = RefreshToken.for_user(request.user)
+
+                access = token.access_token
+                access["type"] = "full_auth"
+                access["scope"] = ["api:*"]
+
+                refresh = token
+                refresh["type"] = "full_auth"
+                refresh["scope"] = ["api:*"]
+
+                return SuccessResponse(
+                    data={
+                        "refresh": str(refresh),
+                        "access": str(access)
+                    }
+                )
             else:
                 return ErrorResponse(
                     errors={
@@ -284,7 +303,7 @@ class UserProfileAPIView(
     """
     serializer_class = UserProfileSerializer
     authentication_classes = [JWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsFullAuthToken]
 
     queryset = apps.get_model('core', 'UserProfile').objects.all()
 
@@ -309,7 +328,7 @@ class UserProfileImageUploadView(mixins.UpdateModelMixin, generics.GenericAPIVie
     """
     serializer_class = UploadUserDpSerializer
     authentication_classes = [JWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsFullAuthToken]
 
     def get_object(self):
         """Retrieve and return user profile"""

@@ -149,6 +149,11 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_TOKEN_CLASSES': (
+      'core.utils.tokens.FullAuthToken',
+      'core.utils.tokens.PreAuthToken'
+    ),
+    'TOKEN_TYPE_CLAIM': 'type',
 }
 SPECTACULAR_SETTINGS = {
   'COMPONENT_SPLIT_REQUEST': True,
