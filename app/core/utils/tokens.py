@@ -1,5 +1,4 @@
 from rest_framework_simplejwt.tokens import Token, AccessToken
-from datetime import timedelta
 from rest_framework_simplejwt.settings import api_settings
 
 
