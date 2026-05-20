@@ -12,10 +12,19 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+from dotenv import load_dotenv
+import os
+
+load_dotenv() 
+ # Load environment variables from .env file
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_S3_REGION_NAME = os.getenv("AWS_REGION")
+AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_S3_BUCKET_NAME")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -43,6 +52,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'rest_framework.authtoken',
     'rest_framework_simplejwt.token_blacklist',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -158,3 +168,6 @@ SIMPLE_JWT = {
 SPECTACULAR_SETTINGS = {
   'COMPONENT_SPLIT_REQUEST': True,
 }
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = None

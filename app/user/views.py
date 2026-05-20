@@ -3,6 +3,8 @@ User views for the user API.
 """
 # Create your views here.
 
+import os
+from dotenv import load_dotenv
 from core.models.user_profile import UserProfile
 from core.utils.base_response import SuccessResponse, ErrorResponse
 import core.utils.util as util
@@ -52,7 +54,7 @@ from django.apps import apps
 from core.utils.tokens import PreAuthToken
 from core.utils.permissions import IsPreAuthToken, IsFullAuthToken
 
-
+  # Load environment variables from .env file
 class CreateUserView(generics.CreateAPIView):
     """Create a new user in the system"""
     serializer_class = UserSerializer
@@ -336,4 +338,5 @@ class UserProfileImageUploadView(mixins.UpdateModelMixin, generics.GenericAPIVie
     
     def patch(self, request, *args, **kwargs):
         """Update user profile image"""
+        print(f'Updating user profile image {os.environ.get("AWS_S3_BUCKET_NAME")}')
         return self.partial_update(request, *args, **kwargs)
