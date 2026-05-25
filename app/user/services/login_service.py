@@ -44,9 +44,7 @@ class LoginService:
         except LookupError:
             account_lock_model = None
 
-        print(f"Account lock status for {email_lower_case}: {account_lock.is_locked if account_lock_model else 'N/A'}")
         if account_lock.is_locked:
-            print(f"Account is locked until {account_lock.locked_until}")
             if timezone.now() > account_lock.locked_until:
                 account_lock.is_locked = False
                 account_lock.save()
