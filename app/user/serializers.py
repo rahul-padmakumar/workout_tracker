@@ -52,10 +52,12 @@ class VerifyOTPSerializer(serializers.Serializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     """Serializer for the user profile object"""
 
+    bmi = serializers.SerializerMethodField()
+
     class Meta:
         """Meta class for the serializer"""
         model = UserProfile
-        fields = (
+        fields = [
             'display_name',
             'age',
             'weight',
@@ -63,9 +65,19 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'gender',
             'activity_level',
             'fitness_goals',
+            'bmi',
             'user_image',
-        )
+        ]
         extra_kwargs = {'user_image': {'required': False}}
+
+    def get_bmi(self, obj):
+        """Calculate and return the BMI of the user"""
+        if obj.height and obj.weight:
+            height_in_m = obj.height / 100
+            bmi = obj.weight / (height_in_m ** 2)
+            return round(bmi, 2)
+        return None
+
 
 class UploadUserDpSerializer(serializers.ModelSerializer):
     """Serializer for uploading user display picture"""
