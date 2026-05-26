@@ -53,6 +53,7 @@ from django.apps import apps
 
 from core.utils.tokens import PreAuthToken
 from core.utils.permissions import IsPreAuthToken, IsFullAuthToken
+from core.tasks import send_email
 
   # Load environment variables from .env file
 class CreateUserView(generics.CreateAPIView):
@@ -233,6 +234,12 @@ class OTPView(APIView):
     def get(self, request):
         """ Generate and return otp"""
         otp_value = otp_service.fetch_otp(request.user)
+        send_email.delay(
+            subject="Your OTP Code",
+            message=f"Your OTP code is: {otp_value}",
+            sender_email=os.environ.get("EMAIL_HOST_USER"),
+            recipient_email=request.user.email
+        )
         return SuccessResponse(
             data={
                 "otp": str(otp_value)

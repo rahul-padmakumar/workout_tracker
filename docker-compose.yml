@@ -28,7 +28,18 @@ services:
       POSTGRES_DB: devdb
     volumes:
       - db_data:/var/lib/postgresql/data
-
+  redis:
+    image: redis:7.0.11-alpine
+  celery3:
+    container_name: celery3
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery --app=app worker -n emailworker -l INFO
+    volumes:
+      - ./app:/app
+    depends_on:
+      - redis
 volumes:
   db_data:
   media_data:
