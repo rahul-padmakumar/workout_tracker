@@ -91,3 +91,14 @@ class UploadUserDpSerializer(serializers.ModelSerializer):
 class ResetPasswordSerializer(serializers.Serializer):
     """Serializer for resetting user password"""
     email = serializers.EmailField()
+
+
+class ResetPasswordConfirmSerializer(serializers.Serializer):
+    """Serializer for confirming password reset"""
+    new_password = serializers.CharField(
+        style={'input_type': 'password'},
+        trim_whitespace=False,
+        min_length=8
+    )
+    email = serializers.EmailField()
+    token = serializers.CharField()

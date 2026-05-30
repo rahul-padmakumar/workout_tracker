@@ -38,7 +38,8 @@ from .serializers import (
   UserSerializer,
   TokenSerializer,
   VerifyOTPSerializer,
-  ResetPasswordSerializer
+  ResetPasswordSerializer,
+  ResetPasswordConfirmSerializer
 )
 
 from core.models.user_profile import UserProfile
@@ -394,3 +395,66 @@ class ResetPasswordView(APIView):
                 "message": _("If an account with that email exists, a password reset link has been sent.")
             }
         )
+    
+
+class ResetPasswordConfirmView(APIView):
+    """
+    View for confirming password reset and setting new password
+    """
+    serializer_class = ResetPasswordConfirmSerializer
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        """Validate token and set new password"""
+        try:
+            email = request.data.get("email")
+            token = request.data.get("token")
+            user = User.objects.get(email=email)
+        except (TypeError, ValueError, OverflowError, ObjectDoesNotExist, MultipleObjectsReturned):
+            user = None
+
+        if user is None:
+            return ErrorResponse(
+                errors=util.ui_error(
+                    message=_("Operation not allowed"),
+                    ui_msg_code=error_codes.ErrorCodes.OPERATION_NOT_ALLOWED
+                ),
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not default_token_generator.check_token(user, token):
+            return ErrorResponse(
+                errors=util.ui_error(
+                    message=_("Invalid or expired password reset link"),
+                    ui_msg_code=error_codes.ErrorCodes.INVALID_TOKEN
+                ),
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = self.serializer_class(data=request.data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            new_password = serializer.validated_data['new_password']
+            if validate_password_service.validate_password(new_password):
+                user.set_password(new_password)
+                user.save()
+                return SuccessResponse(
+                    data={
+                        "message": _("Password has been reset successfully. Please login with your new password.")
+                    }
+                )
+        except PasswordNotStrongEnoughException:
+            return ErrorResponse(
+                errors=util.ui_error(
+                    error_codes.ErrorCodes.PASSWORD_NOT_STRONG_ENOUGH,
+                ),
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        except (PasswordTooShortException, ValidationError):
+            return ErrorResponse(
+                errors=util.ui_error(
+                    error_codes.ErrorCodes.PASSWORD_TOO_SHORT,
+                ),
+                status_code=status.HTTP_400_BAD_REQUEST
+            )

@@ -10,3 +10,4 @@ class ErrorCodes:
     INVALID_TOKEN = "invalid_token"
     OTP_NOT_REQUESTED = "otp_not_requested"
     OTP_REUSED = "otp_reused"
+    OPERATION_NOT_ALLOWED = "operation_not_allowed"

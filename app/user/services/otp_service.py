@@ -69,6 +69,7 @@ def verify_otp(user, otp) -> bool:
             user_entry_in_lock.locked_until = (
                 timezone.now() + timedelta(hours=24)
             )
+            user_entry_in_lock.save()
             raise user_exceptions.UserLockoutException(
                 "Account locked due to invalid"
             )

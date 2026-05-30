@@ -10,7 +10,8 @@ from .views import (
   OTPView,
   UserProfileImageUploadView,
   UserProfileAPIView,
-  ResetPasswordView
+  ResetPasswordView,
+  ResetPasswordConfirmView
 )
 
 app_name = 'user'
@@ -23,5 +24,6 @@ urlpatterns = [
     path('otp/', OTPView.as_view(), name="otp"),
     path('profile/image/upload/', UserProfileImageUploadView.as_view(), name='profile-image-upload'),
     path('profile/', UserProfileAPIView.as_view(), name='profile'),
-    path('reset-password/', ResetPasswordView.as_view(), name='reset-password')
+    path('reset-password/', ResetPasswordView.as_view(), name='reset-password'),
+    path('reset-password-confirm/', ResetPasswordConfirmView.as_view(), name='reset-password-confirm'),
 ]
