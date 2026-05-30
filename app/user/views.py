@@ -5,6 +5,7 @@ User views for the user API.
 
 import os
 from dotenv import load_dotenv
+from core.models.user import User
 from core.models.user_profile import UserProfile
 from core.utils.base_response import SuccessResponse, ErrorResponse
 import core.utils.util as util
@@ -36,7 +37,8 @@ from .serializers import (
   UserProfileSerializer,
   UserSerializer,
   TokenSerializer,
-  VerifyOTPSerializer
+  VerifyOTPSerializer,
+  ResetPasswordSerializer
 )
 
 from core.models.user_profile import UserProfile
@@ -54,6 +56,14 @@ from django.apps import apps
 from core.utils.tokens import PreAuthToken
 from core.utils.permissions import IsPreAuthToken, IsFullAuthToken
 from core.tasks import send_email
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.encoding import force_bytes, force_str
+from django.contrib.auth.tokens import default_token_generator
+import os
+
+
+load_dotenv()
 
   # Load environment variables from .env file
 class CreateUserView(generics.CreateAPIView):
@@ -347,3 +357,40 @@ class UserProfileImageUploadView(mixins.UpdateModelMixin, generics.GenericAPIVie
         """Update user profile image"""
         print(f'Updating user profile image {os.environ.get("AWS_S3_BUCKET_NAME")}')
         return self.partial_update(request, *args, **kwargs)
+
+
+class ResetPasswordView(APIView):
+    """
+    View for sending password reset email
+    """
+    serializer_class = ResetPasswordSerializer
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        """Send password reset email"""
+        try:
+            email = request.data.get("email")
+            user = User.objects.get(email=email)
+        except ObjectDoesNotExist:
+            user = None
+        except MultipleObjectsReturned:
+            user = None
+        if user:
+            encoded_email = urlsafe_base64_encode(force_bytes(user.email))
+            token = default_token_generator.make_token(user)
+            reset_link = f"{os.environ.get('FRONTEND_URL')}/reset-password-confirm/{encoded_email}.{token}"
+            send_email.delay(
+                subject=_("Password Reset"),
+                message=_(
+                    f"Click the link to reset your password: {reset_link}"
+                ),
+                sender_email=os.environ.get("EMAIL_HOST_USER"),
+                recipient_email=user.email
+            )
+
+        return SuccessResponse(
+            data={
+                "message": _("If an account with that email exists, a password reset link has been sent.")
+            }
+        )

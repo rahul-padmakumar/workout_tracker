@@ -87,3 +87,7 @@ class UploadUserDpSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = ('id', 'user_image',)
         extra_kwargs = {'user_image': {'required': True}}
+
+class ResetPasswordSerializer(serializers.Serializer):
+    """Serializer for resetting user password"""
+    email = serializers.EmailField()
