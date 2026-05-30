@@ -83,12 +83,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class UploadUserDpSerializer(serializers.ModelSerializer):
     """Serializer for uploading user display picture"""
-    
+
     class Meta:
         """Meta class for the serializer"""
         model = UserProfile
         fields = ('id', 'user_image',)
         extra_kwargs = {'user_image': {'required': True}}
+
 
 class ResetPasswordSerializer(serializers.Serializer):
     """Serializer for resetting user password"""

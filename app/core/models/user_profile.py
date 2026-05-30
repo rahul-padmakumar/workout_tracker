@@ -3,11 +3,13 @@ from django.db import models
 from django.conf import settings
 import os
 
+
 def file_name(instance, filename):
-        """Generate a unique filename for the uploaded user image"""
-        ext = os.path.splitext(filename)[1]
-        name= f"{uuid.uuid4()}{ext}"
-        return f'user_images/{name}'
+    """Generate a unique filename for the uploaded user image"""
+    ext = os.path.splitext(filename)[1]
+    name = f"{uuid.uuid4()}{ext}"
+    return f'user_images/{name}'
+
 
 class UserProfile(models.Model):
     """Model to store additional information about the user"""

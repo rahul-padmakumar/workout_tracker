@@ -1,3 +1,5 @@
+
+
 def drf_exception_handler(exc, context):
     """Custom exception handler for DRF to return consistent error responses"""
     from rest_framework.views import exception_handler
@@ -15,6 +17,7 @@ def drf_exception_handler(exc, context):
         )
 
     return response
+
 
 def _get_error_message(exc):
     print(f"Extracting error message from: {exc}")

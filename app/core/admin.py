@@ -20,6 +20,7 @@ class UserAdmin(BaseUserAdmin):
     )
     readonly_fields = ['last_login']
 
+
 @admin.register(user_profile.UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
     """Define the admin page for user profiles"""

@@ -6,7 +6,6 @@ User views for the user API.
 import os
 from dotenv import load_dotenv
 from core.models.user import User
-from core.models.user_profile import UserProfile
 from core.utils.base_response import SuccessResponse, ErrorResponse
 import core.utils.util as util
 import core.utils.error_codes as error_codes
@@ -18,7 +17,7 @@ from user.exceptions.user_exceptions import (
     OTPReuseException,
 )
 
-from rest_framework import generics, status, permissions, mixins
+from rest_framework import generics, status, mixins
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import ValidationError
@@ -42,8 +41,6 @@ from .serializers import (
   ResetPasswordConfirmSerializer
 )
 
-from core.models.user_profile import UserProfile
-
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -58,15 +55,15 @@ from core.utils.tokens import PreAuthToken
 from core.utils.permissions import IsPreAuthToken, IsFullAuthToken
 from core.tasks import send_email
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
-import os
 
 
 load_dotenv()
 
-  # Load environment variables from .env file
+
+# Load environment variables from .env file
 class CreateUserView(generics.CreateAPIView):
     """Create a new user in the system"""
     serializer_class = UserSerializer
@@ -330,9 +327,11 @@ class UserProfileAPIView(
     def get_object(self):
         """Retrieve and return user profile"""
         UserProfileModel = apps.get_model('core', 'UserProfile')
-        profile, _ = UserProfileModel.objects.get_or_create(user=self.request.user)
+        profile, _ = UserProfileModel.objects.get_or_create(
+            user=self.request.user
+        )
         return profile
-        
+
     def patch(self, request, *args, **kwargs):
         """Update user profile"""
         return self.update(request, *args, **kwargs)
@@ -342,7 +341,8 @@ class UserProfileAPIView(
         return self.retrieve(request, *args, **kwargs)
 
 
-class UserProfileImageUploadView(mixins.UpdateModelMixin, generics.GenericAPIView):
+class UserProfileImageUploadView(
+        mixins.UpdateModelMixin, generics.GenericAPIView):
     """
     View for uploading user profile image
     """
@@ -353,10 +353,9 @@ class UserProfileImageUploadView(mixins.UpdateModelMixin, generics.GenericAPIVie
     def get_object(self):
         """Retrieve and return user profile"""
         return self.request.user.profile
-    
+
     def patch(self, request, *args, **kwargs):
         """Update user profile image"""
-        print(f'Updating user profile image {os.environ.get("AWS_S3_BUCKET_NAME")}')
         return self.partial_update(request, *args, **kwargs)
 
 
@@ -380,22 +379,28 @@ class ResetPasswordView(APIView):
         if user:
             encoded_email = urlsafe_base64_encode(force_bytes(user.email))
             token = default_token_generator.make_token(user)
-            reset_link = f"{os.environ.get('FRONTEND_URL')}/reset-password-confirm/{encoded_email}.{token}"
+            reset_link = (
+                f"{os.environ.get('FRONTEND_URL')}/reset-password-confirm/"
+                f"{encoded_email}.{token}"
+            )
             send_email.delay(
                 subject=_("Password Reset"),
                 message=_(
                     f"Click the link to reset your password: {reset_link}"
                 ),
                 sender_email=os.environ.get("EMAIL_HOST_USER"),
-                recipient_email=user.email
+                recipient_email=user.email,
             )
 
         return SuccessResponse(
             data={
-                "message": _("If an account with that email exists, a password reset link has been sent.")
+                "message": _(
+                    "If an account with that email exists, a password "
+                    "reset link has been sent."
+                )
             }
         )
-    
+
 
 class ResetPasswordConfirmView(APIView):
     """
@@ -411,7 +416,13 @@ class ResetPasswordConfirmView(APIView):
             email = request.data.get("email")
             token = request.data.get("token")
             user = User.objects.get(email=email)
-        except (TypeError, ValueError, OverflowError, ObjectDoesNotExist, MultipleObjectsReturned):
+        except (
+            TypeError,
+            ValueError,
+            OverflowError,
+            ObjectDoesNotExist,
+            MultipleObjectsReturned
+        ):
             user = None
 
         if user is None:
@@ -422,7 +433,6 @@ class ResetPasswordConfirmView(APIView):
                 ),
                 status_code=status.HTTP_400_BAD_REQUEST
             )
-        
         if not default_token_generator.check_token(user, token):
             return ErrorResponse(
                 errors=util.ui_error(
@@ -441,7 +451,10 @@ class ResetPasswordConfirmView(APIView):
                 user.save()
                 return SuccessResponse(
                     data={
-                        "message": _("Password has been reset successfully. Please login with your new password.")
+                        "message": _(
+                            "Password has been reset successfully."
+                            " Please login with your new password."
+                        )
                     }
                 )
         except PasswordNotStrongEnoughException:
