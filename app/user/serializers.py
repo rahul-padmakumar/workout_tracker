@@ -5,6 +5,7 @@ User serializers for the user API.
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from core.models.user_profile import UserProfile
+from drf_spectacular.utils import extend_schema_field
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -70,6 +71,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {'user_image': {'required': False}}
 
+    @extend_schema_field(serializers.FloatField)
     def get_bmi(self, obj):
         """Calculate and return the BMI of the user"""
         if obj.height and obj.weight:
