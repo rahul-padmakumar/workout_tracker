@@ -41,6 +41,8 @@ from .serializers import (
   ResetPasswordConfirmSerializer
 )
 
+from django.utils import timezone
+
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -447,6 +449,7 @@ class ResetPasswordConfirmView(APIView):
             serializer.is_valid(raise_exception=True)
             new_password = serializer.validated_data['new_password']
             if validate_password_service.validate_password(new_password):
+                user.password_reset_on = timezone.now()
                 user.set_password(new_password)
                 user.save()
                 return SuccessResponse(
