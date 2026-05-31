@@ -18,7 +18,9 @@ from user.exceptions.user_exceptions import (
 )
 
 from rest_framework import generics, status, mixins
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from core.utils.custom_authentication import (
+  CustomAuthentication as JWTAuthentication
+)
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import ValidationError
 from user.services.login_service import LoginService

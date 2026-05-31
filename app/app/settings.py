@@ -150,7 +150,7 @@ AUTH_USER_MODEL = 'core.User'
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'core.utils.custom_authentication.CustomAuthentication',
     ),
     'EXCEPTION_HANDLER': 'core.utils.error_handler.drf_exception_handler',
 }
