@@ -57,7 +57,7 @@ from django.apps import apps
 
 from core.utils.tokens import PreAuthToken
 from core.utils.permissions import IsPreAuthToken, IsFullAuthToken
-from core.tasks import send_email
+from core.tasks import send_otp, send_password_reset_email
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
@@ -246,12 +246,12 @@ class OTPView(APIView):
     def get(self, request):
         """ Generate and return otp"""
         otp_value = otp_service.fetch_otp(request.user)
-        send_email.delay(
-            subject="Your OTP Code",
-            message=f"Your OTP code is: {otp_value}",
-            sender_email=os.environ.get("EMAIL_HOST_USER"),
+
+        send_otp.delay(
+            otp_value=otp_value,
             recipient_email=request.user.email
         )
+
         return SuccessResponse(
             data={
                 "otp": str(otp_value)
@@ -387,13 +387,9 @@ class ResetPasswordView(APIView):
                 f"{os.environ.get('FRONTEND_URL')}/reset-password-confirm/"
                 f"{encoded_email}.{token}"
             )
-            send_email.delay(
-                subject=_("Password Reset"),
-                message=_(
-                    f"Click the link to reset your password: {reset_link}"
-                ),
-                sender_email=os.environ.get("EMAIL_HOST_USER"),
-                recipient_email=user.email,
+            send_password_reset_email.delay(
+                reset_link=reset_link,
+                recipient_email=user.email
             )
 
         return SuccessResponse(
