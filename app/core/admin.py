@@ -4,6 +4,7 @@ from django.contrib import admin # noqa
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from core.models import user, user_profile
 from django.utils.translation import gettext_lazy as _
+from tracker.models import BodyPart, MuscleGroup, Exercise
 
 
 @admin.register(user.User)
@@ -24,3 +25,16 @@ class UserAdmin(BaseUserAdmin):
 @admin.register(user_profile.UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
     """Define the admin page for user profiles"""
+
+@admin.register(BodyPart)
+class BodyPartAdmin(admin.ModelAdmin):
+    """Admin page for body parts"""
+
+@admin.register(MuscleGroup)
+class MuscleGroupAdmin(admin.ModelAdmin):
+    """Admin page for muscle groups"""
+
+@admin.register(Exercise)
+class ExerciseAdmin(admin.ModelAdmin):
+    """Admin page for exercises"""
+    readonly_fields = ['created_at', 'updated_at']
