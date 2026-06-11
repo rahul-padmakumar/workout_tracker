@@ -11,7 +11,10 @@ class ExerciseListView(generics.ListAPIView):
     """View to list all exercises."""
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsFullAuthToken]
-    queryset = apps.get_model('tracker', 'Exercise').objects.filter(is_active=True)
+    queryset = apps.get_model(
+        'tracker',
+        'Exercise'
+    ).objects.filter(is_active=True)
     serializer_class = ExerciseSerializer
 
     def get(self, request, *args, **kwargs):

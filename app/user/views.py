@@ -62,10 +62,11 @@ from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema_view
 
 
 load_dotenv()
+
 
 @extend_schema_view(
     list=extend_schema(extensions={'x-security': []})
@@ -219,7 +220,7 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
         return SuccessResponse(
             data=self.retrieve(request, *args, **kwargs).data
         )
-    
+
     def patch(self, request, *args, **kwargs):
         """Partially update the authenticated user"""
         return SuccessResponse(
@@ -388,6 +389,7 @@ class UserProfileImageUploadView(
         return SuccessResponse(
             data=self.partial_update(request, *args, **kwargs).data
         )
+
 
 class ResetPasswordView(APIView):
     """
