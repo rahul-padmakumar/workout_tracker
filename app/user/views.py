@@ -131,9 +131,7 @@ class CreateUserView(generics.CreateAPIView):
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-@extend_schema_view(
-    list=extend_schema(extensions={'x-security': []})
-)
+
 class CreateTokenView(TokenObtainPairView):
     """Create a new auth token for user"""
     serializer_class = TokenSerializer
@@ -209,6 +207,24 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         """Retrieve and return authenticated user"""
         return self.request.user
+
+    def put(self, request, *args, **kwargs):
+        """Update the authenticated user"""
+        return SuccessResponse(
+            data=self.update(request, *args, **kwargs).data
+        )
+
+    def get(self, request, *args, **kwargs):
+        """Retrieve the authenticated user"""
+        return SuccessResponse(
+            data=self.retrieve(request, *args, **kwargs).data
+        )
+    
+    def patch(self, request, *args, **kwargs):
+        """Partially update the authenticated user"""
+        return SuccessResponse(
+            data=self.partial_update(request, *args, **kwargs).data
+        )
 
 
 class RefreshTokenView(TokenRefreshView):
@@ -343,11 +359,15 @@ class UserProfileAPIView(
 
     def patch(self, request, *args, **kwargs):
         """Update user profile"""
-        return self.update(request, *args, **kwargs)
+        return SuccessResponse(
+            data=self.partial_update(request, *args, **kwargs).data
+        )
 
     def get(self, request, *args, **kwargs):
         """Retrieve user profile"""
-        return self.retrieve(request, *args, **kwargs)
+        return SuccessResponse(
+            data=self.retrieve(request, *args, **kwargs).data
+        )
 
 
 class UserProfileImageUploadView(
@@ -365,11 +385,10 @@ class UserProfileImageUploadView(
 
     def patch(self, request, *args, **kwargs):
         """Update user profile image"""
-        return self.partial_update(request, *args, **kwargs)
+        return SuccessResponse(
+            data=self.partial_update(request, *args, **kwargs).data
+        )
 
-@extend_schema_view(
-    list=extend_schema(extensions={'x-security': []})
-)
 class ResetPasswordView(APIView):
     """
     View for sending password reset email
@@ -408,9 +427,7 @@ class ResetPasswordView(APIView):
             }
         )
 
-@extend_schema_view(
-    list=extend_schema(extensions={'x-security': []})
-)
+
 class ResetPasswordConfirmView(APIView):
     """
     View for confirming password reset and setting new password

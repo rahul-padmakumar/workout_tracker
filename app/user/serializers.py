@@ -54,6 +54,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     """Serializer for the user profile object"""
 
     bmi = serializers.SerializerMethodField()
+    user_image = serializers.ImageField(read_only=True)
 
     class Meta:
         """Meta class for the serializer"""
@@ -69,7 +70,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'bmi',
             'user_image',
         ]
-        extra_kwargs = {'user_image': {'required': False}}
 
     @extend_schema_field(serializers.FloatField)
     def get_bmi(self, obj):
@@ -87,7 +87,7 @@ class UploadUserDpSerializer(serializers.ModelSerializer):
     class Meta:
         """Meta class for the serializer"""
         model = UserProfile
-        fields = ('id', 'user_image',)
+        fields = ('user_image')
         extra_kwargs = {'user_image': {'required': True}}
 
 
