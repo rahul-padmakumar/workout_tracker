@@ -62,11 +62,14 @@ from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 
 load_dotenv()
 
-
+@extend_schema_view(
+    list=extend_schema(extensions={'x-security': []})
+)
 # Load environment variables from .env file
 class CreateUserView(generics.CreateAPIView):
     """Create a new user in the system"""
@@ -128,7 +131,9 @@ class CreateUserView(generics.CreateAPIView):
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-
+@extend_schema_view(
+    list=extend_schema(extensions={'x-security': []})
+)
 class CreateTokenView(TokenObtainPairView):
     """Create a new auth token for user"""
     serializer_class = TokenSerializer
@@ -362,7 +367,9 @@ class UserProfileImageUploadView(
         """Update user profile image"""
         return self.partial_update(request, *args, **kwargs)
 
-
+@extend_schema_view(
+    list=extend_schema(extensions={'x-security': []})
+)
 class ResetPasswordView(APIView):
     """
     View for sending password reset email
@@ -401,7 +408,9 @@ class ResetPasswordView(APIView):
             }
         )
 
-
+@extend_schema_view(
+    list=extend_schema(extensions={'x-security': []})
+)
 class ResetPasswordConfirmView(APIView):
     """
     View for confirming password reset and setting new password

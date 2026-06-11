@@ -53,8 +53,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_framework_simplejwt.token_blacklist',
     'storages',
-    'tracker',
     'user',
+    'tracker',
 ]
 
 MIDDLEWARE = [
@@ -170,6 +170,16 @@ SIMPLE_JWT = {
 }
 SPECTACULAR_SETTINGS = {
   'COMPONENT_SPLIT_REQUEST': True,
+  'SECURITY':[{'jwtAuth': []}],
+  'COMPONENTS': {
+    'securitySchemes': {
+      'jwtAuth': {
+        'type': 'http',
+        'scheme': 'bearer',
+        'bearerFormat': 'JWT',
+      }
+    }
+  },
 }
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 AWS_S3_FILE_OVERWRITE = False
