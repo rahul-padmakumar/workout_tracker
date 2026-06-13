@@ -1,6 +1,7 @@
 from django.apps import apps
 from django_filters.rest_framework import FilterSet, ChoiceFilter
 
+
 class ExerciseFilter(FilterSet):
     """Filter for Exercise model."""
 

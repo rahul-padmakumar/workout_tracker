@@ -16,11 +16,13 @@ class ExerciseListView(generics.ListAPIView):
     queryset = apps.get_model(
         'tracker',
         'Exercise'
-    ).objects.prefetch_related('muscle_groups', 'body_part').filter(is_active=True)
+    ).objects.prefetch_related(
+        'muscle_groups',
+        'body_part'
+    ).filter(is_active=True)
     serializer_class = ExerciseSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ExerciseFilter
-
 
     def get(self, request, *args, **kwargs):
         """List all exercises."""
