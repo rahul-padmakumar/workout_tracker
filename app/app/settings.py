@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'storages',
     'user',
     'tracker',
+    'django_filters',
 ]
 
 MIDDLEWARE = [
@@ -155,6 +156,9 @@ REST_FRAMEWORK = {
         'core.utils.custom_authentication.CustomAuthentication',
     ),
     'EXCEPTION_HANDLER': 'core.utils.error_handler.drf_exception_handler',
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ]
 }
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
