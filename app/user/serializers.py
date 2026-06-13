@@ -87,7 +87,7 @@ class UploadUserDpSerializer(serializers.ModelSerializer):
     class Meta:
         """Meta class for the serializer"""
         model = UserProfile
-        fields = ('user_image')
+        fields = ('user_image',)
         extra_kwargs = {'user_image': {'required': True}}
 
 
