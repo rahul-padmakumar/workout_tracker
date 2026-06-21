@@ -3,7 +3,8 @@
 from tracker.models import (
   BodyPart,
   Exercise,
-  MuscleGroup
+  MuscleGroup,
+  Program,
 )
 from rest_framework import serializers
 
@@ -35,5 +36,18 @@ class ExerciseSerializer(serializers.ModelSerializer):
             'id', 'name', 'preparation', 'execution', 'comments', 'difficulty',
             'muscle_groups', 'equipment', 'body_part',
             'is_active', 'created_at', 'updated_at', 'video_url'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class ProgramSerializer(serializers.ModelSerializer):
+    """Serializer for program model"""
+    class Meta:
+        model = Program
+        fields = [
+            'id', 'name', 'description',
+            'created_at',
+            'updated_at',
+            'duration_in_weeks'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']

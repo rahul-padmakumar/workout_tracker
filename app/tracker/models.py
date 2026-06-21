@@ -140,7 +140,7 @@ class WorkoutSets(models.Model):
         on_delete=models.CASCADE,
         related_name='exercise_sets'
     )
-    set_number = models.PositiveIntegerField(null=True, blank=True)
+    set_number = models.PositiveIntegerField(null=True, blank=True, default=0)
     repetitions = models.PositiveIntegerField(null=True, blank=True)
     weight_kg = models.FloatField(blank=True, null=True)
     rest_time_sec = models.PositiveIntegerField(default=0)
@@ -150,4 +150,4 @@ class WorkoutSets(models.Model):
 
     def __str__(self):
         return f"{self.workout.name} - {self.exercise.name}\
-            Set {self.set_number}"
+            Set { self.set_number}"
