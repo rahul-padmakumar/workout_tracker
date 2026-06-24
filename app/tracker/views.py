@@ -139,4 +139,4 @@ class WorkoutViewSet(
     )
 
     def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
+        return SuccessResponse(super().retrieve(request, *args, **kwargs).data)
