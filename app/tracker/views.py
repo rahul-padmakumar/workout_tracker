@@ -118,4 +118,6 @@ class ProgramViewSet(
 
     def retrieve(self, request, *args, **kwargs):
         print("Hello all I am here")
-        return super().retrieve(request, *args, **kwargs)
+        return SuccessResponse(
+            super().retrieve(request, *args, **kwargs).data
+        )
