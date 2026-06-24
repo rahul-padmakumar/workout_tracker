@@ -5,6 +5,9 @@ from tracker.models import (
   Exercise,
   MuscleGroup,
   Program,
+  Workout,
+  WorkoutSets,
+  ProgramWorkout,
 )
 from rest_framework import serializers
 
@@ -51,3 +54,96 @@ class ProgramSerializer(serializers.ModelSerializer):
             'duration_in_weeks'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class WorkoutSerializer(serializers.ModelSerializer):
+    """Serializer for workout data"""
+    class Meta:
+        model = Workout
+        fields = [
+            'id',
+            'name',
+            'date',
+            'duration_min',
+            'notes',
+            'created_at'
+        ]
+        read_only_field = [
+            'id',
+            'created_at'
+        ]
+
+
+class ProgramWorkoutDetailSerializer(serializers.ModelSerializer):
+    """ Serializer for program workout """
+    workout_id = serializers.IntegerField(source="workout.id")
+    name = serializers.CharField(source='workout.name')
+    date = serializers.DateTimeField(source='workout.date')
+    duration_min = serializers.IntegerField(source='workout.duration_min')
+
+    class Meta:
+        """Meta for indicating model"""
+        model = ProgramWorkout
+        fields = [
+            'workout_id',
+            'name',
+            'date',
+            'duration_min',
+            'week_number',
+            'day_of_week'
+        ]
+        read_only_fields = [
+            'workout_id',
+            'name',
+            'date',
+            'duration_min',
+            'week_number',
+            'day_of_week'
+        ]
+
+
+class ProgramReadSerializer(serializers.ModelSerializer):
+    """Serializer for reading a particular program data"""
+    workouts = ProgramWorkoutDetailSerializer(
+        source='program_workouts', many=True
+    )
+
+    class Meta:
+        model = Program
+        fields = [
+            'name',
+            'description',
+            'created_at',
+            'duration_in_weeks',
+            'workouts'
+        ]
+        read_only_fields = [
+            'name',
+            'description',
+            'created_at',
+            'duration_in_weeks',
+            'workouts'
+        ]
+
+
+class WorkoutSetSerializer(serializers.ModelSerializer):
+    """Serializer for workout set"""
+    exercise = serializers.PrimaryKeyRelatedField(
+        queryset=Exercise.objects.all()  # pylint: disable=no-member
+    )
+
+    class Meta:
+        model = WorkoutSets
+        fields = [
+            'id',
+            'workout',
+            'exercise',
+            'set_number',
+            'repetitions',
+            'weight_kg',
+            'rest_time_sec',
+            'duration_sec',
+            'distance_m',
+            'created_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'workout']

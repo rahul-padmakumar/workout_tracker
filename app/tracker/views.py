@@ -3,6 +3,7 @@ from core.utils.permissions import IsFullAuthToken
 from tracker.serializers import (
   ExerciseSerializer,
   ProgramSerializer,
+  ProgramReadSerializer,
 )
 from rest_framework import generics
 from django.apps import apps
@@ -13,9 +14,11 @@ from rest_framework.mixins import (
     CreateModelMixin,
     UpdateModelMixin,
     DestroyModelMixin,
-    ListModelMixin
+    ListModelMixin,
+    RetrieveModelMixin,
 )
 from rest_framework.viewsets import GenericViewSet
+from django.db.models import Prefetch
 # Create your views here.
 
 
@@ -46,16 +49,36 @@ class ProgramViewSet(
     ListModelMixin,
     DestroyModelMixin,
     UpdateModelMixin,
+    RetrieveModelMixin,
     GenericViewSet
 ):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsFullAuthToken]
-    queryset = apps.get_model(
-        "tracker",
-        'Program'
-    ).objects.all()
     serializer_class = ProgramSerializer
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    http_method_names = ['get', 'post', 'patch', 'delete', 'retrieve']
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return ProgramReadSerializer
+        else:
+            return ProgramSerializer
+
+    def get_queryset(self):
+        programs = apps.get_model(
+            "tracker",
+            'Program'
+        )
+        if self.action == 'retrieve':
+            programs.objects.prefetch_related(
+                Prefetch(
+                    'program_workouts',
+                    queryset=apps.get_model(
+                        'tracker',
+                        'ProgramWorkout'
+                    ).objects.prefetch_related('workout')
+                )
+            )
+        return programs.objects.all()
 
     def get(self, request, *args, **kwargs):
         return SuccessResponse(
@@ -92,3 +115,7 @@ class ProgramViewSet(
 
     def perform_create(self, serializer):
         return serializer.save(user=self.request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        print("Hello all I am here")
+        return super().retrieve(request, *args, **kwargs)
