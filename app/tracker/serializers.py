@@ -128,22 +128,47 @@ class ProgramReadSerializer(serializers.ModelSerializer):
 
 class WorkoutSetSerializer(serializers.ModelSerializer):
     """Serializer for workout set"""
-    exercise = serializers.PrimaryKeyRelatedField(
-        queryset=Exercise.objects.all()  # pylint: disable=no-member
+    exercise_name = serializers.CharField(source='exercise.name')
+    muscle_groups = MuscleGroupSerializer(
+        source='exercise.muscle_groups',
+        many=True
     )
+    body_part = BodyPartSerializer(source='exercise.body_part', many=True)
 
     class Meta:
         model = WorkoutSets
         fields = [
             'id',
-            'workout',
-            'exercise',
+            'exercise_name',
+            'muscle_groups',
+            'body_part',
             'set_number',
             'repetitions',
             'weight_kg',
             'rest_time_sec',
             'duration_sec',
             'distance_m',
-            'created_at'
         ]
-        read_only_fields = ['id', 'created_at', 'workout']
+        read_only_fields = ['id']
+
+
+class WorkoutDetailReadSerializer(serializers.ModelSerializer):
+    """Serializer for workout detail retrieval"""
+    sets = WorkoutSetSerializer(source='workout_sets', many=True)
+
+    class Meta:
+        model = Workout
+        fields = [
+            'name',
+            'date',
+            'duration_min',
+            'notes',
+            'sets'
+        ]
+        read_only_fields = [
+            'name',
+            'date',
+            'duration_min',
+            'notes',
+            'sets'
+        ]

@@ -4,6 +4,7 @@ from tracker.serializers import (
   ExerciseSerializer,
   ProgramSerializer,
   ProgramReadSerializer,
+  WorkoutDetailReadSerializer,
 )
 from rest_framework import generics
 from django.apps import apps
@@ -121,3 +122,21 @@ class ProgramViewSet(
         return SuccessResponse(
             super().retrieve(request, *args, **kwargs).data
         )
+
+
+class WorkoutViewSet(
+    RetrieveModelMixin,
+    GenericViewSet
+):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsFullAuthToken]
+    serializer_class = WorkoutDetailReadSerializer
+    queryset = apps.get_model(
+        'tracker',
+        'Workout'
+    ).objects.prefetch_related(
+        'workout_sets'
+    )
+
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
