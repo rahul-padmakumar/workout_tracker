@@ -135,7 +135,18 @@ class WorkoutViewSet(
         'tracker',
         'Workout'
     ).objects.prefetch_related(
-        'workout_sets'
+        Prefetch(
+            'workout_sets',
+            apps.get_model(
+                'tracker',
+                'WorkoutSets'
+            ).objects.select_related(
+                'exercise'
+            ).prefetch_related(
+                'exercise__muscle_groups',
+                'exercise__body_part'
+            )
+        )
     )
 
     def retrieve(self, request, *args, **kwargs):
