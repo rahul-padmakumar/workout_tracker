@@ -10,6 +10,7 @@ from tracker.models import (
   ProgramWorkout,
 )
 from rest_framework import serializers
+from django.apps import apps
 
 
 class BodyPartSerializer(serializers.ModelSerializer):
@@ -172,3 +173,94 @@ class WorkoutDetailReadSerializer(serializers.ModelSerializer):
             'notes',
             'sets'
         ]
+
+
+class WorkoutSetCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkoutSets
+        fields = [
+            'id',
+            'exercise',
+            'workout',
+            'set_number',
+            'repetitions',
+            'weight_kg',
+            'rest_time_sec',
+            'duration_sec',
+            'distance_m',
+        ]
+        read_only_fields = [
+            'id',
+            'workout'
+        ]
+
+
+class WorkoutCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating workouts"""
+    sets = WorkoutSetCreateSerializer(source='workout_sets', many=True)
+    program_id = serializers.IntegerField(write_only=True)
+    week_number = serializers.IntegerField(write_only=True)
+    day_of_week = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        model = Workout
+        fields = [
+            'id',
+            'name',
+            'date',
+            'duration_min',
+            'notes',
+            'sets',
+            'program_id',
+            'week_number',
+            'day_of_week',
+        ]
+        read_only_fields = [
+            'id'
+        ]
+
+    def create(self, validated_data):
+        print(validated_data)
+        workout_sets_data = validated_data.pop('workout_sets')
+        program_id = validated_data.pop('program_id')
+        week_number = validated_data.pop('week_number')
+        day_of_week = validated_data.pop('day_of_week')
+
+        print(f"Hello {validated_data}")
+
+        workout_model = apps.get_model(
+            'tracker',
+            'Workout'
+        )
+        workout = workout_model.objects.create(**validated_data)
+
+        program_model = apps.get_model(
+            'tracker',
+            'ProgramWorkout'
+        )
+
+        program = apps.get_model(
+            'tracker',
+            'Program'
+        ).objects.get(id=program_id)
+
+        program_model.objects.create(
+            workout=workout,
+            week_number=week_number,
+            day_of_week=day_of_week,
+            program=program
+        )
+
+        workout_set_model = apps.get_model(
+            'tracker',
+            'WorkoutSets'
+        )
+
+        workout_set_model.objects.bulk_create(
+            [
+                WorkoutSets(workout=workout, **workout_set_data)
+                for workout_set_data in workout_sets_data
+            ]
+        )
+
+        return workout

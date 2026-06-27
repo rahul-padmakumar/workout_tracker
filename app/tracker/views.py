@@ -5,6 +5,7 @@ from tracker.serializers import (
   ProgramSerializer,
   ProgramReadSerializer,
   WorkoutDetailReadSerializer,
+  WorkoutCreateSerializer,
 )
 from rest_framework import generics
 from django.apps import apps
@@ -126,11 +127,11 @@ class ProgramViewSet(
 
 class WorkoutViewSet(
     RetrieveModelMixin,
+    CreateModelMixin,
     GenericViewSet
 ):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsFullAuthToken]
-    serializer_class = WorkoutDetailReadSerializer
     queryset = apps.get_model(
         'tracker',
         'Workout'
@@ -149,5 +150,47 @@ class WorkoutViewSet(
         )
     )
 
+    def get_queryset(self):
+        if self.action == 'retrieve':
+            return apps.get_model(
+                'tracker',
+                'Workout'
+            ).objects.prefetch_related(
+                Prefetch(
+                    'workout_sets',
+                    apps.get_model(
+                        'tracker',
+                        'WorkoutSets'
+                    ).objects.select_related(
+                        'exercise'
+                    ).prefetch_related(
+                        'exercise__muscle_groups',
+                        'exercise__body_part'
+                    )
+                )
+            )
+        else:
+            return apps.get_model(
+                'tracker',
+                'Workout'
+            ).objects.all()
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return WorkoutDetailReadSerializer
+        else:
+            return WorkoutCreateSerializer
+
     def retrieve(self, request, *args, **kwargs):
         return SuccessResponse(super().retrieve(request, *args, **kwargs).data)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return SuccessResponse(
+            data=serializer.data
+        )
+
+    def perform_create(self, serializer):
+        return serializer.save(user=self.request.user)
