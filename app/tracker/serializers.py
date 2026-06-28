@@ -264,3 +264,52 @@ class WorkoutCreateSerializer(serializers.ModelSerializer):
         )
 
         return workout
+
+    def update(self, instance, validated_data):
+        workout_sets_data = validated_data.pop('workout_sets', None)
+        program_id = validated_data.pop('program_id', None)
+        week_number = validated_data.pop('week_number', None)
+        day_of_week = validated_data.pop('day_of_week', None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+
+        if program_id or week_number or day_of_week:
+            program_model = apps.get_model(
+                'tracker',
+                'ProgramWorkout'
+            )
+            program_workout = program_model.objects.get(
+                workout=instance
+            )
+            if program_id:
+                program = apps.get_model(
+                    'tracker',
+                    'Program'
+                ).objects.get(id=program_id)
+                if program != program_workout.program:
+                    program_workout.program = program
+            if week_number:
+                program_workout.week_number = week_number
+            if day_of_week:
+                program_workout.day_of_week = day_of_week
+            program_workout.save()
+
+        if workout_sets_data is not None:
+            instance.workout_sets.all().delete()
+
+            workout_set_model = apps.get_model(
+                'tracker',
+                'WorkoutSets'
+            )
+
+            workout_set_model.objects.bulk_create(
+                [
+                    WorkoutSets(workout=instance, **workout_set_data)
+                    for workout_set_data in workout_sets_data
+                ]
+            )
+
+        return instance

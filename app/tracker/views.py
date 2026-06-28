@@ -129,27 +129,12 @@ class WorkoutViewSet(
     RetrieveModelMixin,
     CreateModelMixin,
     DestroyModelMixin,
+    UpdateModelMixin,
     GenericViewSet
 ):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsFullAuthToken]
-    queryset = apps.get_model(
-        'tracker',
-        'Workout'
-    ).objects.prefetch_related(
-        Prefetch(
-            'workout_sets',
-            apps.get_model(
-                'tracker',
-                'WorkoutSets'
-            ).objects.select_related(
-                'exercise'
-            ).prefetch_related(
-                'exercise__muscle_groups',
-                'exercise__body_part'
-            )
-        )
-    )
+    http_method_names = ['get', 'post', 'patch', 'delete', 'retrieve']
 
     def get_queryset(self):
         if self.action == 'retrieve':
@@ -201,4 +186,17 @@ class WorkoutViewSet(
         self.perform_destroy(instance)
         return SuccessResponse(
             data=_("Workout succesfully removed from the program")
+        )
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return SuccessResponse(
+            data=serializer.data
         )
