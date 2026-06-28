@@ -21,6 +21,7 @@ from rest_framework.mixins import (
 )
 from rest_framework.viewsets import GenericViewSet
 from django.db.models import Prefetch
+from django.utils.translation import gettext as _
 # Create your views here.
 
 
@@ -99,7 +100,7 @@ class ProgramViewSet(
         instance = self.get_object()
         self.perform_destroy(instance)
         return SuccessResponse(
-            data="Program deleted successfully"
+            data=_("Program deleted successfully")
         )
 
     def partial_update(self, request, *args, **kwargs):
@@ -119,7 +120,6 @@ class ProgramViewSet(
         return serializer.save(user=self.request.user)
 
     def retrieve(self, request, *args, **kwargs):
-        print("Hello all I am here")
         return SuccessResponse(
             super().retrieve(request, *args, **kwargs).data
         )
@@ -128,6 +128,7 @@ class ProgramViewSet(
 class WorkoutViewSet(
     RetrieveModelMixin,
     CreateModelMixin,
+    DestroyModelMixin,
     GenericViewSet
 ):
     authentication_classes = [JWTAuthentication]
@@ -194,3 +195,10 @@ class WorkoutViewSet(
 
     def perform_create(self, serializer):
         return serializer.save(user=self.request.user)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return SuccessResponse(
+            data=_("Workout succesfully removed from the program")
+        )
