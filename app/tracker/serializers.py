@@ -75,6 +75,18 @@ class WorkoutSerializer(serializers.ModelSerializer):
         ]
 
 
+class ProgramWorkoutSerializer(serializers.ModelSerializer):
+    """Serializer for program workout for fetching within workout detail"""
+
+    class Meta:
+        model = ProgramWorkout
+        fields = [
+            'program',
+            'week_number',
+            'day_of_week'
+        ]
+
+
 class ProgramWorkoutDetailSerializer(serializers.ModelSerializer):
     """ Serializer for program workout """
     workout_id = serializers.IntegerField(source="workout.id")
@@ -156,6 +168,10 @@ class WorkoutSetSerializer(serializers.ModelSerializer):
 class WorkoutDetailReadSerializer(serializers.ModelSerializer):
     """Serializer for workout detail retrieval"""
     sets = WorkoutSetSerializer(source='workout_sets', many=True)
+    program_workout = ProgramWorkoutSerializer(
+        source='workout_programs',
+        many=True
+    )
 
     class Meta:
         model = Workout
@@ -164,14 +180,16 @@ class WorkoutDetailReadSerializer(serializers.ModelSerializer):
             'date',
             'duration_min',
             'notes',
-            'sets'
+            'sets',
+            'program_workout'
         ]
         read_only_fields = [
             'name',
             'date',
             'duration_min',
             'notes',
-            'sets'
+            'sets',
+            'program_workout'
         ]
 
 

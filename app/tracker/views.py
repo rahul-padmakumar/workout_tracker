@@ -142,6 +142,7 @@ class WorkoutViewSet(
                 'tracker',
                 'Workout'
             ).objects.prefetch_related(
+                'workout_programs',
                 Prefetch(
                     'workout_sets',
                     apps.get_model(
